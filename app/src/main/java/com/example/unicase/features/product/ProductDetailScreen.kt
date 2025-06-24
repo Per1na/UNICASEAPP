@@ -1,5 +1,6 @@
 package com.example.unicase.features.product
 
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -16,6 +17,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
@@ -25,6 +27,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
@@ -36,6 +39,8 @@ import androidx.navigation.compose.rememberNavController
 import com.example.unicase.model.ColorOption
 import com.example.unicase.model.Product
 import com.example.unicase.R
+import com.example.unicase.model.CartItem
+import com.example.unicase.model.cartItems
 import com.example.unicase.model.dummyProducts
 import com.example.unicase.ui.theme.Poppins
 import com.example.unicase.ui.theme.PrimaryBlue
@@ -44,27 +49,30 @@ import com.example.unicase.ui.theme.UnicaseTheme
 @OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun ProductDetailScreen(navController: NavController, product: Product) {
+    var isFavorited by remember { mutableStateOf(false) }
 
     Scaffold(
-        // Point 1: TopBar tanpa teks
         topBar = {
             TopAppBar(
-                title = { Text("Product Detail", fontWeight = FontWeight.Bold)},
+                title = { Text("Product Detail", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 actions = {
-                    IconButton(onClick = { /* TODO */ }) {
-                        Icon(Icons.Default.Favorite, contentDescription = "Wishlist", tint = PrimaryBlue)
+                    IconButton(onClick = { isFavorited = !isFavorited }) {
+                        Icon(
+                            imageVector = if (isFavorited) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                            contentDescription = "Wishlist",
+                            tint = PrimaryBlue
+                        )
                     }
                 }
             )
         },
-        // Point 8: BottomBar khusus untuk halaman ini
         bottomBar = {
-            BottomBar(price = product.price)
+            BottomBar(product = product)
         }
     ) { innerPadding ->
         LazyColumn(
@@ -264,7 +272,9 @@ fun ReviewCard() {
 
 // Point 8: Composable untuk Bottom Bar
 @Composable
-fun BottomBar(price: String) {
+fun BottomBar(product: Product) {
+    val context = LocalContext.current
+
     Surface(shadowElevation = 8.dp) {
         Row(
             modifier = Modifier
@@ -275,13 +285,22 @@ fun BottomBar(price: String) {
         ) {
             Column {
                 Text("Total Price", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                Text(price, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Normal, color = PrimaryBlue)
+                Text(product.price, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = PrimaryBlue)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { /*TODO*/ }) {
+                OutlinedButton(onClick = { /*TODO: Langsung ke checkout*/ }) {
                     Text("Buy")
                 }
-                Button(onClick = { /*TODO*/ }) {
+                Button(onClick = {
+                    val existingItem = cartItems.find { it.product.id == product.id }
+
+                    if (existingItem != null) {
+                        existingItem.quantity++
+                    } else {
+                        cartItems.add(CartItem(product = product, quantity = 1))
+                    }
+                    Toast.makeText(context, "${product.name} added to cart", Toast.LENGTH_SHORT).show()
+                }) {
                     Icon(Icons.Default.ShoppingCart, contentDescription = "Add to Cart")
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Add to Cart")

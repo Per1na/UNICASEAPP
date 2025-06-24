@@ -72,4 +72,7 @@ dependencies {
 
     // 5. Constraint Layout Dependencies
     implementation("androidx.constraintlayout:constraintlayout-compose:1.0.1")
+
+    // 6. Icons
+    implementation("androidx.compose.material:material-icons-extended:1.6.0-alpha02")
 }

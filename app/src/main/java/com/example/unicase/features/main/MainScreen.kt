@@ -1,5 +1,3 @@
-// Lokasi: app/src/main/java/com/example/unicase/features/main/MainScreen.kt
-
 package com.example.unicase.features.main
 
 import androidx.compose.foundation.layout.Box
@@ -96,8 +94,7 @@ fun MainScreen(mainNavController: NavHostController) { // <-- Fungsi ini sekaran
             }
         }
     }
-}
-
+} 
 
 @Composable
 fun AppNavHost(

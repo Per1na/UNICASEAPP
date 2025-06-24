@@ -1,5 +1,3 @@
-// Lokasi: app/src/main/java/com/example/unicase/features/home/HomeScreen.kt
-
 package com.example.unicase.features.home
 
 import androidx.compose.foundation.Image
@@ -97,7 +95,7 @@ fun HomeTopBar(navController: NavController) {
             IconButton(onClick = { navController.navigate("cart") }) {
                 Icon(Icons.Default.ShoppingCart, contentDescription = "Shopping Cart", tint = PrimaryBlue)
             }
-            IconButton(onClick = { /*TODO*/ }) {
+            IconButton(onClick = { navController.navigate("profile") }) {
                 Icon(Icons.Default.Person, contentDescription = "Profile", tint = PrimaryBlue)
             }
         }

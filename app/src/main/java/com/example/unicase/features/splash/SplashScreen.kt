@@ -32,7 +32,7 @@ fun SplashScreen(navController: NavController) { // NavController untuk pindah h
     Box(
         modifier = Modifier
             .fillMaxSize() // Memenuhi seluruh layar
-            .background(BrandBlue), // Set background putih
+            .background(BrandBlue),
         contentAlignment = Alignment.Center // Menempatkan konten di tengah
     ) {
         Image(

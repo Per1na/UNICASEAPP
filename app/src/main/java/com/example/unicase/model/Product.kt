@@ -45,8 +45,7 @@ val dummyProducts = listOf(
             ColorOption("Red", Color.Red),
             ColorOption("Black", Color.Black),
             ColorOption("Blue", Color.Blue),
-            ColorOption("Green", Color.Green),
-        ),
+            ColorOption("Green", Color.Green)),
         price = "Rp67.000"
     ),
     Product(
@@ -55,6 +54,62 @@ val dummyProducts = listOf(
         fullName = "Silikon Ipong 20 MEK",
         imageRes = R.drawable.gambar_ws1,
         images = listOf(R.drawable.gambar_ws1), // <-- TAMBAHKAN JUGA DI SINI
+        rating = 4.9,
+        reviewCount = 99,
+        description = "Deskripsi untuk Silikont Ipong 20 MEK.",
+        variant = "Varian: Black, Red, Mlue",
+        colors = listOf(ColorOption("Black", Color.Black)),
+        price = "Rp. 80.000"
+    ),
+
+    Product(
+        id = 3,
+        name = "Silikont Ipong 20 MEK",
+        fullName = "Silikon Ipong 20 MEK",
+        imageRes = R.drawable.gambar_ws1,
+        images = listOf(R.drawable.gambar_ws1),
+        rating = 4.9,
+        reviewCount = 99,
+        description = "Deskripsi untuk Silikont Ipong 20 MEK.",
+        variant = "Varian: Black, Red, Mlue",
+        colors = listOf(ColorOption("Black", Color.Black)),
+        price = "Rp. 80.000"
+    ),
+
+    Product(
+    id = 4,
+    name = "Silikont Ipong 20 MEK",
+    fullName = "Silikon Ipong 20 MEK",
+    imageRes = R.drawable.gambar_ws1,
+    images = listOf(R.drawable.gambar_ws1),
+    rating = 4.9,
+    reviewCount = 99,
+    description = "Deskripsi untuk Silikont Ipong 20 MEK.",
+    variant = "Varian: Black, Red, Mlue",
+    colors = listOf(ColorOption("Black", Color.Black)),
+    price = "Rp. 80.000"
+    ),
+
+    Product(
+        id = 5,
+        name = "Silikont Ipong 20 MEK",
+        fullName = "Silikon Ipong 20 MEK",
+        imageRes = R.drawable.gambar_ws1,
+        images = listOf(R.drawable.gambar_ws1),
+        rating = 4.9,
+        reviewCount = 99,
+        description = "Deskripsi untuk Silikont Ipong 20 MEK.",
+        variant = "Varian: Black, Red, Mlue",
+        colors = listOf(ColorOption("Black", Color.Black)),
+        price = "Rp. 80.000"
+    ),
+
+    Product(
+        id = 6,
+        name = "Silikont Ipong 20 MEK",
+        fullName = "Silikon Ipong 20 MEK",
+        imageRes = R.drawable.gambar_ws1,
+        images = listOf(R.drawable.gambar_ws1),
         rating = 4.9,
         reviewCount = 99,
         description = "Deskripsi untuk Silikont Ipong 20 MEK.",

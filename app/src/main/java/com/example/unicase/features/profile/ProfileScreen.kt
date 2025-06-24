@@ -30,7 +30,6 @@ import com.example.unicase.R
 import com.example.unicase.ui.theme.PrimaryBlue
 import com.example.unicase.ui.theme.UnicaseTheme
 
-// Buat data class untuk mempermudah pengelolaan menu
 data class ProfileMenuItemData(
     @DrawableRes val iconRes: Int,
     val text: String,

@@ -14,6 +14,7 @@ import com.example.unicase.features.main.MainScreen
 import com.example.unicase.features.main.PlaceholderScreen
 import com.example.unicase.features.notification.NotificationScreen
 import com.example.unicase.features.product.ProductDetailScreen
+import com.example.unicase.features.profile.ProfileScreen
 import com.example.unicase.features.search.SearchScreen
 import com.example.unicase.features.splash.SplashScreen
 import com.example.unicase.model.dummyProducts
@@ -82,5 +83,9 @@ fun AppNavigation() {
         composable("cart") {
             ShoppingCartScreen(navController = navController)
         }
+        composable("profile") {
+            ProfileScreen(navController = navController)
+        }
+
     }
 }

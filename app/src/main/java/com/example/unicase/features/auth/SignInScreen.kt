@@ -19,20 +19,24 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.unicase.R
+import com.example.unicase.datastore.UserPreferences
 import com.example.unicase.ui.theme.Poppins
 import com.example.unicase.ui.theme.PrimaryBlue
 import com.example.unicase.ui.theme.UnicaseTheme
+import com.example.unicase.viewmodel.AuthViewModel
 
 @Composable
-fun SignInScreen(navController: NavController) {
+fun SignInScreen(navController: NavController, viewModel: AuthViewModel = viewModel()) {
     // State untuk menampung input dari pengguna
     var email by rememberSaveable { mutableStateOf("") }
     var password by rememberSaveable { mutableStateOf("") }
@@ -40,6 +44,32 @@ fun SignInScreen(navController: NavController) {
 
     var emailError by remember { mutableStateOf<String?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+    val loginState = viewModel.loginState
+    var loginErrorMessage by remember { mutableStateOf<String?>(null) }
+    var loginAttempted by remember { mutableStateOf(false) }
+
+
+
+    LaunchedEffect(loginState) {
+        if (loginState != null && loginState.isSuccess) {
+            val response = loginState.getOrNull()
+            val token = response?.token
+            val name = response?.user?.name
+
+            token?.let {
+                val prefs = UserPreferences(context)
+                prefs.saveToken(it)
+                prefs.saveName(name ?: "") // Simpan nama user yang login sekarang
+                navController.navigate("main") {
+                    popUpTo("signin") { inclusive = true }
+                }
+            }
+        } else if (loginState != null && loginState.isFailure) {
+            loginErrorMessage = "Email or password is incorrect"
+        }
+    }
+
 
     Column(
         modifier = Modifier
@@ -47,7 +77,10 @@ fun SignInScreen(navController: NavController) {
             .padding(horizontal = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
-    ) {
+
+    )
+
+    {
         Image(
             painter = painterResource(id = R.drawable.ic_unicase_logo2),
             contentDescription = "Unicase Logo",
@@ -56,17 +89,22 @@ fun SignInScreen(navController: NavController) {
                 .scale(1.5f)
         )
 
+
+
         // Input field untuk Email
         OutlinedTextField(
             value = email,
             onValueChange = {
                 email = it
                 emailError = null
+                loginErrorMessage = null
+
+
             },
             label = { Text("Email",
                 fontFamily = Poppins,
                 fontWeight = FontWeight.Normal)
-                    },
+            },
             modifier = Modifier
                 .fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
@@ -78,7 +116,7 @@ fun SignInScreen(navController: NavController) {
                     Text(emailError!!, color = MaterialTheme.colorScheme.error)
                 }
             },
-                colors = OutlinedTextFieldDefaults.colors
+            colors = OutlinedTextFieldDefaults.colors
                 (focusedBorderColor = PrimaryBlue,
                 unfocusedBorderColor = Color.Gray,
                 cursorColor = PrimaryBlue,
@@ -101,14 +139,14 @@ fun SignInScreen(navController: NavController) {
             label = { Text("Password",
                 fontFamily = Poppins,
                 fontWeight = FontWeight.Normal)
-                    },
+            },
             modifier = Modifier
                 .fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
             singleLine = true,
             visualTransformation =
                 if(passwordVisible) VisualTransformation.None
-            else PasswordVisualTransformation(),
+                else PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
             trailingIcon = {
                 val image = if (passwordVisible)
@@ -137,6 +175,18 @@ fun SignInScreen(navController: NavController) {
                 }
             }
         )
+        if (loginErrorMessage != null) {
+            Text(
+                text = loginErrorMessage!!,
+                color = MaterialTheme.colorScheme.error,
+                fontSize = 14.sp,
+                modifier = Modifier
+                    .align(Alignment.Start)
+                    .padding(bottom = 8.dp)
+            )
+        }
+
+
 
         // Tombol Lupa Password
         TextButton(
@@ -183,18 +233,19 @@ fun SignInScreen(navController: NavController) {
                         formIsValid = false
                     }
                 }
+
                 if (formIsValid) {
-                    // TODO: Logic Sign In yang sebenarnya (misal: panggil API)
-                    // Untuk sekarang, kita navigasi ke main screen
-                    navController.navigate("main") {
-                        popUpTo("signin") { inclusive = true }
-                    }
+                    loginAttempted = true
+                    loginErrorMessage = null
+                    viewModel.login(email, password)
                 }
             },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
-        ) {
+        )
+
+        {
             Text(text = "Sign In",
                 fontFamily = Poppins,
                 fontWeight = FontWeight.SemiBold,
@@ -220,9 +271,11 @@ fun SignInScreen(navController: NavController) {
                     color = PrimaryBlue,
                     fontSize = 16.sp)
             }
+
         }
     }
 }
+
 
 
 @Preview(showBackground = true, device = "id:pixel_4")

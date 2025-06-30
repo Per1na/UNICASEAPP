@@ -1,5 +1,7 @@
 package com.example.unicase.features.profile
 
+import android.content.Context
+import android.util.Log
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -15,10 +17,12 @@ import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -27,8 +31,13 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.unicase.R
+import com.example.unicase.datastore.UserPreferences
 import com.example.unicase.ui.theme.PrimaryBlue
 import com.example.unicase.ui.theme.UnicaseTheme
+import kotlinx.coroutines.launch
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+
 
 data class ProfileMenuItemData(
     @DrawableRes val iconRes: Int,
@@ -39,6 +48,16 @@ data class ProfileMenuItemData(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(navController: NavController) {
+    val context = LocalContext.current
+    val name by UserPreferences(context).getName().collectAsState(initial = "")
+    Log.d("PROFILE", "Nama yang dibaca: $name")
+
+
+
+
+
+
+
     // Siapkan daftar menu dalam sebuah list
     val menuItems = listOf(
         ProfileMenuItemData(R.drawable.ic_wallet, "Pay"),
@@ -48,6 +67,7 @@ fun ProfileScreen(navController: NavController) {
         ProfileMenuItemData(R.drawable.ic_costumer_service, "Chat Admin"),
         ProfileMenuItemData(R.drawable.ic_log_out, "Log Out", isLogout = true)
     )
+
 
     Scaffold(
         topBar = {
@@ -70,7 +90,7 @@ fun ProfileScreen(navController: NavController) {
             // Header sebagai item pertama
             item {
                 Spacer(modifier = Modifier.height(24.dp))
-                ProfileHeader()
+                ProfileHeader(name = name ?: "")
                 Spacer(modifier = Modifier.height(32.dp))
             }
 
@@ -79,11 +99,17 @@ fun ProfileScreen(navController: NavController) {
                 Divider(modifier = Modifier.padding(horizontal = 16.dp))
             }
 
-            // Daftar Menu sebagai item-item berikutnya
+
             items(menuItems) { item ->
                 // Panggil ProfileMenuItem di dalam padding
                 Box(modifier = Modifier.padding(horizontal = 16.dp)) {
-                    ProfileMenuItem(iconRes = item.iconRes, text = item.text, isLogout = item.isLogout)
+                    ProfileMenuItem(
+                        iconRes = item.iconRes,
+                        text = item.text,
+                        isLogout = item.isLogout,
+                        navController = navController,
+                        context = context
+                    )
                 }
             }
         }
@@ -91,7 +117,7 @@ fun ProfileScreen(navController: NavController) {
 }
 
 @Composable
-fun ProfileHeader() {
+fun ProfileHeader(name: String) {
     Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -123,24 +149,40 @@ fun ProfileHeader() {
                 )
             }
         }
-        Text(text = "Dillon Bonay", fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.Black)
+        Text(text = name,
+            fontWeight = FontWeight.Bold, fontSize = 20.sp, color = Color.Black)
     }
 }
 
 // --- FUNGSI YANG DIPERBAIKI ---
 @Composable
-fun ProfileMenuItem(@DrawableRes iconRes: Int, text: String, isLogout: Boolean = false) {
+fun ProfileMenuItem(@DrawableRes
+                    iconRes: Int,
+                    text: String,
+                    isLogout: Boolean = false,
+                    navController: NavController,
+                    context: android.content.Context) {
+
+    val coroutineScope = rememberCoroutineScope()
     Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { /* TODO: Aksi untuk setiap item menu */ }
+        modifier = Modifier.fillMaxWidth().clickable {
+                if (isLogout) {
+                    coroutineScope.launch {
+                        UserPreferences(context).clearToken()
+                        navController.navigate("signin") {
+                            popUpTo("main") { inclusive = true } // agar tidak bisa kembali pakai back
+                        }
+                    }
+                } else {
+                    // TODO: Aksi lainnya (misalnya navigasi ke halaman setting, shipped, dll)
+                }
+            }
             .padding(vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
             painter = painterResource(id = iconRes),
             contentDescription = text,
-            // Mengganti warna default menjadi abu-abu gelap
             tint = if (isLogout) Color.Red else Color.Black,
             modifier = Modifier.size(40.dp)
         )
@@ -148,11 +190,12 @@ fun ProfileMenuItem(@DrawableRes iconRes: Int, text: String, isLogout: Boolean =
         Text(
             text = text,
             fontWeight = FontWeight.SemiBold,
-            // Mengganti warna default menjadi abu-abu gelap
             color = if (isLogout) Color.Red else Color.Black
         )
+
     }
-}
+    }
+
 // ------------------------------
 
 

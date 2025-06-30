@@ -75,4 +75,11 @@ dependencies {
 
     // 6. Icons
     implementation("androidx.compose.material:material-icons-extended:1.6.0-alpha02")
+
+    // 7. Api
+    implementation ("com.squareup.retrofit2:retrofit:2.9.0")
+    implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
+    implementation ("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
+    implementation ("androidx.datastore:datastore-preferences:1.0.0")
+
 }

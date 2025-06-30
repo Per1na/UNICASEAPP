@@ -6,25 +6,42 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.navigation.NavController
 import com.example.unicase.R
+import com.example.unicase.datastore.UserPreferences
 import com.example.unicase.ui.theme.BrandBlue
 import com.example.unicase.ui.theme.UnicaseTheme
-import com.example.unicase.ui.theme.TertiaryWhite
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+
 
 @Composable
-fun SplashScreen(navController: NavController) { // NavController untuk pindah halaman
-    // LaunchedEffect akan menjalankan blok kode coroutine saat composable pertama kali muncul
-    LaunchedEffect(key1 = true) {
-        delay(3000L) // Tunda selama 3 detik
-        // Setelah 3 detik, hapus splash dari backstack dan pindah ke halaman welcome
-        navController.navigate("welcome") {
-            popUpTo("splash") { inclusive = true }
+fun SplashScreen(navController: NavController) {
+    val context = LocalContext.current
+    val userPreferences = remember { UserPreferences(context) }
+
+    LaunchedEffect(Unit) {
+        delay(3000L)
+        val token = withContext(Dispatchers.IO) {
+            userPreferences.getToken()
+        }
+        if (!token.isNullOrEmpty()) {
+            // Token ditemukan, langsung ke main
+            navController.navigate("main") {
+                popUpTo("splash") { inclusive = true }
+            }
+        } else {
+            // Tidak ada token, ke welcome/signin
+            navController.navigate("welcome") {
+                popUpTo("splash") { inclusive = true }
+            }
         }
     }
 

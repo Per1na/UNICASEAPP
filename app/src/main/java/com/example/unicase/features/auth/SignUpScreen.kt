@@ -1,5 +1,6 @@
 package com.example.unicase.features.auth
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -15,6 +16,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -23,15 +25,18 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.unicase.R
+import com.example.unicase.datastore.UserPreferences
 import com.example.unicase.ui.theme.Poppins
 import com.example.unicase.ui.theme.PrimaryBlue
 import com.example.unicase.ui.theme.UnicaseTheme
+import com.example.unicase.viewmodel.AuthViewModel
 
 @Composable
-fun SignUpScreen(navController: NavController) {
+fun SignUpScreen(navController: NavController, viewModel: AuthViewModel = viewModel()) {
     // State untuk semua input field
     var name by rememberSaveable { mutableStateOf("") }
     var email by rememberSaveable { mutableStateOf("") }
@@ -46,6 +51,29 @@ fun SignUpScreen(navController: NavController) {
     var emailError by remember { mutableStateOf<String?>(null) }
     var passwordError by remember { mutableStateOf<String?>(null) }
     var confirmPasswordError by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+    val registerState = viewModel.registerState
+    Log.d("SIGNUP", "Nama yang disimpan: $name")
+
+
+
+
+
+
+    LaunchedEffect(registerState) {
+        if (registerState != null && registerState.isSuccess) {
+            val token = registerState.getOrNull()?.token
+            token?.let {
+                val prefs = UserPreferences(context)
+                prefs.saveToken(it)
+                prefs.saveName(name)
+                navController.navigate("main") {
+                    popUpTo("signin") { inclusive = true }
+                }
+            }
+
+        }
+    }
 
 
     Column(
@@ -73,7 +101,7 @@ fun SignUpScreen(navController: NavController) {
             label = { Text("Name",
                 fontFamily = Poppins,
                 fontWeight = FontWeight.Normal)
-                    },
+            },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp),
             singleLine = true,
@@ -84,12 +112,12 @@ fun SignUpScreen(navController: NavController) {
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
             colors = OutlinedTextFieldDefaults.colors(focusedBorderColor = PrimaryBlue,
-            unfocusedBorderColor = Color.Gray,
-            cursorColor = PrimaryBlue,
-            focusedLabelColor = PrimaryBlue,
-            unfocusedLabelColor = Color.Gray,
-            focusedTextColor = Color.Black,
-            unfocusedTextColor = Color.Black
+                unfocusedBorderColor = Color.Gray,
+                cursorColor = PrimaryBlue,
+                focusedLabelColor = PrimaryBlue,
+                unfocusedLabelColor = Color.Gray,
+                focusedTextColor = Color.Black,
+                unfocusedTextColor = Color.Black
             )
         )
 
@@ -272,11 +300,8 @@ fun SignUpScreen(navController: NavController) {
 
                 // Jika sudah semua
                 if (formIsValid) {
-                    // TODO: Logic Sign Up yang sebenarnya (misal: panggil API)
-                    // Untuk sekarang, kita navigasi ke main screen
-                    navController.navigate("main") {
-                        popUpTo("signup") { inclusive = true }
-                    }
+                    viewModel.register(name, email, password, confirmPassword)
+
                 }
             },
             modifier = Modifier.fillMaxWidth(),

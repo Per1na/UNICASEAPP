@@ -1,5 +1,3 @@
-// Lokasi: app/src/main/java/com/example/unicase/features/cart/ShoppingCartScreen.kt
-
 package com.example.unicase.features.cart
 
 import androidx.compose.foundation.BorderStroke
@@ -13,6 +11,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -111,10 +110,11 @@ fun CartItemRow(cartItem: CartItem) {
         Spacer(modifier = Modifier.width(16.dp))
         Row(
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+
         ) {
             IconButton(onClick = { if (quantity > 1) quantity-- }, modifier = Modifier.size(28.dp)) {
-                Icon(Icons.Default.Close, contentDescription = "Decrease quantity", tint = PrimaryBlue)
+                Icon(Icons.Default.Remove, contentDescription = "Decrease quantity", tint = PrimaryBlue)
             }
             Text(text = "$quantity", fontWeight = FontWeight.Bold, color = PrimaryBlue)
             IconButton(onClick = { quantity++ }, modifier = Modifier.size(28.dp)) {

@@ -10,12 +10,16 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.unicase.features.auth.*
 import com.example.unicase.features.cart.ShoppingCartScreen
+import com.example.unicase.features.customization.CustomCaseScreen
 import com.example.unicase.features.main.MainScreen
 import com.example.unicase.features.main.PlaceholderScreen
 import com.example.unicase.features.notification.NotificationScreen
 import com.example.unicase.features.product.ProductDetailScreen
 import com.example.unicase.features.profile.ProfileScreen
 import com.example.unicase.features.search.SearchScreen
+import com.example.unicase.features.setting.ChangeNameScreen
+import com.example.unicase.features.setting.ChangeProfileScreen
+import com.example.unicase.features.setting.SettingScreen
 import com.example.unicase.features.splash.SplashScreen
 import com.example.unicase.model.dummyProducts
 
@@ -85,6 +89,18 @@ fun AppNavigation() {
         }
         composable("profile") {
             ProfileScreen(navController = navController)
+        }
+        composable("setting") {
+            SettingScreen(navController = navController)
+        }
+        composable("change_profile") {
+            ChangeProfileScreen(navController = navController)
+        }
+        composable("change_name") {
+            ChangeNameScreen(navController = navController)
+        }
+        composable("custom_case") {
+            CustomCaseScreen(navController = navController)
         }
     }
 }

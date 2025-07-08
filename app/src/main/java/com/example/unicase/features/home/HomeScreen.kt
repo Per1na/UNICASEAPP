@@ -25,7 +25,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.unicase.R
 import com.example.unicase.model.Product
 import com.example.unicase.model.dummyProducts
 import com.example.unicase.ui.theme.PrimaryBlue
@@ -45,7 +44,7 @@ fun HomeScreen(navController: NavController) {
         item(span = { GridItemSpan(maxLineSpan) }) {
             Column {
                 HomeTopBar(navController = navController)
-                CustomBanner()
+                CustomBanner(navController = navController)
                 CategorySection()
             }
         }
@@ -103,11 +102,12 @@ fun HomeTopBar(navController: NavController) {
 }
 
 @Composable
-fun CustomBanner() {
+fun CustomBanner(navController: NavController) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(150.dp),
+            .height(150.dp)
+            .clickable { navController.navigate("custom_case") },
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = PrimaryBlue)
     ) {
@@ -142,7 +142,7 @@ fun CustomBanner() {
 
 @Composable
 fun CategorySection() {
-    var selectedCategoryIndex by remember { mutableStateOf(0) }
+    var selectedCategoryIndex by remember { mutableIntStateOf(0) }
     Column(modifier = Modifier.padding(vertical = 16.dp)) {
         Text("Case Category", fontWeight = FontWeight.Bold, fontSize = 16.sp)
         Spacer(modifier = Modifier.height(16.dp))
@@ -198,7 +198,6 @@ fun ProductCard(product: Product, onClick: () -> Unit) {
         }
     }
 }
-
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {

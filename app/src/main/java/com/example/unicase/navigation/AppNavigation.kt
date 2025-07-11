@@ -10,6 +10,7 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.unicase.features.auth.*
 import com.example.unicase.features.cart.ShoppingCartScreen
+import com.example.unicase.features.checkout.CheckoutScreen
 import com.example.unicase.features.customization.CustomCaseScreen
 import com.example.unicase.features.main.MainScreen
 import com.example.unicase.features.main.PlaceholderScreen
@@ -101,6 +102,9 @@ fun AppNavigation() {
         }
         composable("custom_case") {
             CustomCaseScreen(navController = navController)
+        }
+        composable("checkout") {
+            CheckoutScreen(navController = navController)
         }
     }
 }

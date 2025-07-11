@@ -1,21 +1,26 @@
 package com.example.unicase.features.customization
 
 import android.net.Uri
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectTransformGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -26,7 +31,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -34,44 +38,63 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
-import androidx.compose.foundation.lazy.items
 import com.example.unicase.R
 import com.example.unicase.ui.theme.Poppins
+import com.example.unicase.ui.theme.PrimaryBlue
 import com.example.unicase.ui.theme.UnicaseTheme
-import com.example.unicase.util.GlobalKey
-import com.example.unicase.util.captureAndSaveDesign
-import kotlinx.coroutines.launch
+import java.util.UUID
 
-data class ImageData(
-    val uri: Uri,
+sealed class DesignLayer(
+    val id: UUID = UUID.randomUUID(),
     var scale: MutableState<Float> = mutableStateOf(1f),
     var offsetX: MutableState<Float> = mutableStateOf(0f),
     var offsetY: MutableState<Float> = mutableStateOf(0f),
     var rotation: MutableState<Float> = mutableStateOf(0f)
 )
 
+data class ImageLayer(val uri: Uri) : DesignLayer()
+data class TextLayer(var text: String, var color: MutableState<Color>) : DesignLayer()
+
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomCaseScreen(navController: NavController) {
-    val scope = rememberCoroutineScope()
-    val context = LocalContext.current
-    val captureKey = remember { GlobalKey() }
-
-    var images by remember { mutableStateOf<List<ImageData>>(emptyList()) }
-    var selectedImageIndex by remember { mutableStateOf(0) }
+    var layers by remember { mutableStateOf<List<DesignLayer>>(emptyList()) }
+    var selectedLayerId by remember { mutableStateOf<UUID?>(null) }
+    var showAddTextDialog by remember { mutableStateOf(false) }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri ->
-            if (uri != null && images.size < 4) {
-                images = images + ImageData(uri)
-                selectedImageIndex = images.lastIndex
+            if (uri != null) {
+                val newImageLayer = ImageLayer(uri)
+                val existingImageIndex = layers.indexOfFirst { it is ImageLayer }
+
+                val newLayers = layers.toMutableList()
+                if (existingImageIndex != -1) {
+                    newLayers[existingImageIndex] = newImageLayer
+                } else {
+                    newLayers.add(newImageLayer)
+                }
+                layers = newLayers
+                selectedLayerId = newImageLayer.id
             }
         }
     )
 
-    val selectedImage = images.getOrNull(selectedImageIndex)
+    if (showAddTextDialog) {
+        AddTextDialog(
+            onDismiss = { showAddTextDialog = false },
+            onConfirm = { text, color ->
+                if (text.isNotEmpty()) {
+                    val newLayer = TextLayer(text, mutableStateOf(color))
+                    layers = layers + newLayer
+                    selectedLayerId = newLayer.id
+                }
+                showAddTextDialog = false
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -89,50 +112,12 @@ fun CustomCaseScreen(navController: NavController) {
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Button(onClick = {
-                    scope.launch {
-                        val savedFile = captureAndSaveDesign(context, captureKey) {
-                            Box(
-                                modifier = Modifier
-                                    .width(240.dp)
-                                    .height(480.dp)
-                                    .background(Color(0xFFF0F0F0)),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                images.forEach {
-                                    AsyncImage(
-                                        model = it.uri,
-                                        contentDescription = null,
-                                        contentScale = ContentScale.Crop,
-                                        modifier = Modifier
-                                            .fillMaxSize()
-                                            .graphicsLayer(
-                                                scaleX = it.scale.value,
-                                                scaleY = it.scale.value,
-                                                translationX = it.offsetX.value,
-                                                translationY = it.offsetY.value,
-                                                rotationZ = it.rotation.value
-                                            )
-                                    )
-                                }
-
-                                Image(
-                                    painter = painterResource(id = R.drawable.case_template),
-                                    contentDescription = null,
-                                    modifier = Modifier.fillMaxSize(),
-                                    contentScale = ContentScale.FillBounds
-                                )
-                            }
-                        }
-                        Toast.makeText(context, "Saved to: ${savedFile.absolutePath}", Toast.LENGTH_SHORT).show()
-                    }
-                }, modifier = Modifier.weight(1f)) {
-                    Text("Save Design")
+                OutlinedButton(onClick = { /*TODO*/ }, modifier = Modifier.weight(1f)) {
+                    Text("Add to Cart")
                 }
-
-                Button(onClick = { /* TODO: Checkout logic */ }, modifier = Modifier.weight(1f)) {
+                Button(onClick = { navController.navigate("checkout") }, modifier = Modifier.weight(1f)) {
                     Text("Checkout")
                 }
             }
@@ -142,7 +127,7 @@ fun CustomCaseScreen(navController: NavController) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 12.dp)
+                .padding(horizontal = 16.dp)
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -151,8 +136,7 @@ fun CustomCaseScreen(navController: NavController) {
                     .fillMaxWidth()
                     .aspectRatio(3f / 3f)
                     .clip(RoundedCornerShape(16.dp))
-                    .background(Color.LightGray)
-                    .then(captureKey.modifier()),
+                    .background(Color.LightGray),
                 contentAlignment = Alignment.Center
             ) {
                 Box(
@@ -161,9 +145,10 @@ fun CustomCaseScreen(navController: NavController) {
                         .aspectRatio(10f / 19.5f)
                         .clipToBounds()
                         .clip(RoundedCornerShape(24.dp))
-                        .pointerInput(selectedImage?.uri) {
+                        .pointerInput(selectedLayerId) {
                             detectTransformGestures { _, pan, zoom, rotationChange ->
-                                selectedImage?.let {
+                                val selectedLayer = layers.find { it.id == selectedLayerId }
+                                selectedLayer?.let {
                                     it.scale.value *= zoom
                                     it.offsetX.value += pan.x
                                     it.offsetY.value += pan.y
@@ -172,25 +157,46 @@ fun CustomCaseScreen(navController: NavController) {
                             }
                         }
                 ) {
-                    images.forEachIndexed { index, image ->
-                        AsyncImage(
-                            model = image.uri,
-                            contentDescription = null,
-                            contentScale = ContentScale.Crop,
+                    layers.forEach { layer ->
+                        Box(
                             modifier = Modifier
                                 .fillMaxSize()
+                                .clickable { selectedLayerId = layer.id }
                                 .graphicsLayer(
-                                    scaleX = image.scale.value,
-                                    scaleY = image.scale.value,
-                                    translationX = image.offsetX.value,
-                                    translationY = image.offsetY.value,
-                                    rotationZ = image.rotation.value
+                                    scaleX = layer.scale.value,
+                                    scaleY = layer.scale.value,
+                                    translationX = layer.offsetX.value,
+                                    translationY = layer.offsetY.value,
+                                    rotationZ = layer.rotation.value
                                 )
-                        )
+                                .border(
+                                    width = if (layer.id == selectedLayerId) 2.dp else 0.dp,
+                                    color = if (layer.id == selectedLayerId) PrimaryBlue else Color.Transparent
+                                )
+                        ) {
+                            when (layer) {
+                                is ImageLayer -> {
+                                    AsyncImage(
+                                        model = layer.uri,
+                                        contentDescription = "Image Layer",
+                                        contentScale = ContentScale.Crop,
+                                        modifier = Modifier.fillMaxSize()
+                                    )
+                                }
+                                is TextLayer -> {
+                                    Text(
+                                        text = layer.text,
+                                        color = layer.color.value,
+                                        style = MaterialTheme.typography.headlineSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        modifier = Modifier.align(Alignment.Center)
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
 
-                // Case template overlay
                 Image(
                     painter = painterResource(id = R.drawable.case_template),
                     contentDescription = "Case Template",
@@ -200,49 +206,57 @@ fun CustomCaseScreen(navController: NavController) {
                         .aspectRatio(10f / 19.5f)
                         .clip(RoundedCornerShape(24.dp))
                 )
+            }
 
-                // Trash icon for delete selected image
-                if (selectedImage != null) {
-                    IconButton(
-                        onClick = {
-                            if (selectedImageIndex in images.indices) {
-                                images = images.toMutableList().also { it.removeAt(selectedImageIndex) }
-                                selectedImageIndex = images.lastIndex.coerceAtLeast(0)
-                            }
-                        },
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(8.dp)
-                    ) {
-                        Icon(Icons.Default.Delete, contentDescription = "Delete Selected", tint = Color.Red)
-                    }
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                val imageLayerExists = layers.any { it is ImageLayer }
+                Button(onClick = { galleryLauncher.launch("image/*") }) {
+                    Text(if (imageLayerExists) "Change Image" else "Add Image")
+                }
+                OutlinedButton(onClick = { showAddTextDialog = true }) {
+                    Text("Add Text")
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                onClick = { galleryLauncher.launch("image/*") },
-                enabled = images.size < 4
-            ) {
-                Text("Upload Your Image (${images.size}/4)")
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            if (images.isNotEmpty()) {
-                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    itemsIndexed(images) { index, _ ->
+            if (layers.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Layers", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                LazyRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    itemsIndexed(layers) { index, layer ->
+                        val isSelected = layer.id == selectedLayerId
+                        val buttonText = when (layer) {
+                            is ImageLayer -> "Image"
+                            is TextLayer -> layer.text
+                        }
                         OutlinedButton(
-                            onClick = { selectedImageIndex = index },
+                            onClick = { selectedLayerId = layer.id },
                             colors = ButtonDefaults.outlinedButtonColors(
-                                containerColor = if (index == selectedImageIndex) Color(0xFF2885F0) else Color.Transparent,
-                                contentColor = if (index == selectedImageIndex) Color.White else Color(0xFF2885F0)
+                                containerColor = if (isSelected) PrimaryBlue else Color.Transparent,
                             )
                         ) {
-                            Text("Image ${index + 1}")
+                            Text(text = buttonText, color = if (isSelected) Color.White else PrimaryBlue)
                         }
                     }
+                }
+                Button(
+                    onClick = {
+                        if(selectedLayerId != null) {
+                            layers = layers.filterNot { it.id == selectedLayerId }
+                            selectedLayerId = layers.lastOrNull()?.id
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
+                    enabled = selectedLayerId != null,
+                    modifier = Modifier.padding(top = 8.dp)
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = "Delete Layer")
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Delete Selected Layer")
                 }
             }
 
@@ -253,49 +267,203 @@ fun CustomCaseScreen(navController: NavController) {
 }
 
 @Composable
+fun AddTextDialog(onDismiss: () -> Unit, onConfirm: (String, Color) -> Unit) {
+    var text by remember { mutableStateOf("") }
+    var selectedColor by remember { mutableStateOf(Color.White) }
+    val colors = listOf(Color.White, Color.Black, Color.Red, Color.Blue, Color.Yellow)
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add/Edit Custom Text") },
+        text = {
+            Column {
+                OutlinedTextField(
+                    value = text,
+                    onValueChange = { text = it },
+                    label = { Text("Your Text") }
+                )
+                Spacer(modifier = Modifier.height(16.dp))
+                Text("Select Color:")
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp), modifier = Modifier.padding(top = 8.dp)) {
+                    items(colors) { color ->
+                        val isSelected = selectedColor == color
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(color)
+                                .border(
+                                    width = if (isSelected) 2.dp else 1.dp,
+                                    color = if (isSelected) PrimaryBlue else Color.Gray,
+                                    shape = CircleShape
+                                )
+                                .clickable { selectedColor = color }
+                        )
+                    }
+                }
+            }
+        },
+        confirmButton = {
+            Button(
+                onClick = { onConfirm(text, selectedColor) },
+                enabled = text.isNotEmpty()
+            ) {
+                Text("Save")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    )
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
 fun CustomizationOptionSection() {
+
+    val brands = listOf("Samsung", "Apple", "Xiaomi", "Oppo", "Vivo")
+
+    val phoneTypes = mapOf(
+        "Samsung" to listOf("Samsung Z Flip5", "Galaxy S24 Ultra", "Galaxy A55"),
+        "Apple" to listOf("iPhone 15 Pro Max", "iPhone 15", "iPhone 14"),
+        "Xiaomi" to listOf("Xiaomi 14", "Redmi Note 13 Pro", "Poco F6")
+    )
+
+    var selectedBrand by remember { mutableStateOf(brands.first()) }
+    var selectedType by remember { mutableStateOf(phoneTypes[selectedBrand]?.first() ?: "") }
+    var isBrandDropdownExpanded by remember { mutableStateOf(false) }
+    var isTypeDropdownExpanded by remember { mutableStateOf(false) }
+    var additionalDescription by remember { mutableStateOf("") }
+
+    LaunchedEffect(selectedBrand) {
+        selectedType = phoneTypes[selectedBrand]?.first() ?: ""
+    }
+
     Column(
         modifier = Modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(24.dp)
     ) {
         Column {
-            Text(
-                "Case Type",
+            Text("Case Type", style = MaterialTheme.typography.titleMedium, fontFamily = Poppins, color = Color.Black, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(8.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(listOf("Hardcase", "Softcase", "Premium anti crack")) { text -> OutlinedButton(onClick = {}) { Text(text) } }
+            }
+        }
+        Column {
+            Text("Print Effect", style = MaterialTheme.typography.titleMedium, fontFamily = Poppins, color = Color.Black, fontWeight = FontWeight.Bold)
+            Spacer(modifier = Modifier.height(8.dp))
+            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                items(listOf("Glossy", "Doff", "Glow Effect")) { text -> OutlinedButton(onClick = {}) { Text(text) } }
+            }
+        }
+
+        Column {
+            Text("Select brand",
                 style = MaterialTheme.typography.titleMedium,
                 fontFamily = Poppins,
                 color = Color.Black,
-                fontWeight = FontWeight.Bold
-            )
+                fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(listOf("Hardcase", "Softcase", "Premium anti crack")) { text ->
-                    OutlinedButton(onClick = { /*TODO*/ }) {
-                        Text(text)
+            ExposedDropdownMenuBox(
+                expanded = isBrandDropdownExpanded,
+                onExpandedChange = { isBrandDropdownExpanded = !isBrandDropdownExpanded }
+            ) {
+                OutlinedTextField(
+                    value = selectedBrand,
+                    onValueChange = {},
+                    readOnly = true,
+                    shape = RoundedCornerShape(12.dp),
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isBrandDropdownExpanded) },
+                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                )
+                ExposedDropdownMenu(
+                    expanded = isBrandDropdownExpanded,
+                    onDismissRequest = { isBrandDropdownExpanded = false }
+                ) {
+                    brands.forEach { brand ->
+                        DropdownMenuItem(
+                            text = { Text(brand) },
+                            onClick = {
+                                selectedBrand = brand
+                                isBrandDropdownExpanded = false
+                            }
+                        )
                     }
                 }
             }
         }
 
         Column {
-            Text(
-                "Print Effect",
+            Text("Select Type",
                 style = MaterialTheme.typography.titleMedium,
                 fontFamily = Poppins,
                 color = Color.Black,
-                fontWeight = FontWeight.Bold
-            )
+                fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
-            LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(listOf("Glossy", "Doff", "Glow Effect")) { text ->
-                    OutlinedButton(onClick = { /*TODO*/ }) {
-                        Text(text)
+            ExposedDropdownMenuBox(
+                expanded = isTypeDropdownExpanded,
+                onExpandedChange = { isTypeDropdownExpanded = !isTypeDropdownExpanded }
+            ) {
+                OutlinedTextField(
+                    value = selectedType,
+                    onValueChange = {},
+                    readOnly = true,
+                    shape = RoundedCornerShape(12.dp),
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isTypeDropdownExpanded) },
+                    modifier = Modifier.menuAnchor().fillMaxWidth()
+                )
+                ExposedDropdownMenu(
+                    expanded = isTypeDropdownExpanded,
+                    onDismissRequest = { isTypeDropdownExpanded = false }
+                ) {
+                    phoneTypes[selectedBrand]?.forEach { type ->
+                        DropdownMenuItem(
+                            text = { Text(type) },
+                            onClick = {
+                                selectedType = type
+                                isTypeDropdownExpanded = false
+                            }
+                        )
                     }
                 }
             }
         }
+
+        OutlinedTextField(
+            value = additionalDescription,
+            onValueChange = { additionalDescription = it },
+            label = { Text("Deskripsi tambahan") },
+            modifier = Modifier.fillMaxWidth().height(120.dp)
+        )
+
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(Icons.Default.Info, contentDescription = "Info", modifier = Modifier.size(16.dp), tint = Color.Gray)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("Casing Galaxy Z Flip dikenakan biaya tambahan Rp 10.000 karena bahan khusus.", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+        }
+
+        Column(modifier = Modifier.padding(top = 16.dp)) {
+            PriceRow(label = "Case Type",price = "Rp35.000")
+            Spacer(modifier = Modifier.height(8.dp))
+            PriceRow(label = "Print Effect", price = "Rp8.000")
+        }
     }
 }
 
+
+@Composable
+fun PriceRow(label: String, price: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        Text(label, color = Color.LightGray)
+        Text(price, fontWeight = FontWeight.SemiBold, color = Color.Black)
+    }
+}
 
 @Composable
 @Preview(showBackground = true)

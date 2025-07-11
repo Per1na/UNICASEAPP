@@ -1,5 +1,3 @@
-// Lokasi: app/src/main/java/com/example/unicase/features/profile/ProfileScreen.kt
-
 package com.example.unicase.features.profile
 
 import android.net.Uri
@@ -22,6 +20,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,19 +62,18 @@ fun ProfileScreen(navController: NavController) {
         ProfileMenuItemData(R.drawable.ic_log_out, "Log Out", isLogout = true)
     )
 
-    // State untuk dialog dan launcher
     var showOptionsDialog by remember { mutableStateOf(false) }
     var showFullScreenImage by remember { mutableStateOf(false) }
+    var showLogoutDialog by remember { mutableStateOf(false) } // State untuk dialog logout
+
     val context = LocalContext.current
     val isNotInPreview = !LocalInspectionMode.current
 
-    // Launcher untuk Galeri (menggunakan state global)
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri -> userProfileImageUri = uri }
     )
 
-    // Launcher untuk Kamera (menggunakan state global)
     val tempImageUri = if (isNotInPreview) {
         remember {
             val file = File(context.cacheDir, "temp_image.jpg")
@@ -90,7 +88,6 @@ fun ProfileScreen(navController: NavController) {
         }
     )
 
-    // Tampilkan Dialog Pilihan jika state-nya true
     if (showOptionsDialog) {
         ImagePickerOptionsDialog(
             onDismissRequest = { showOptionsDialog = false },
@@ -105,7 +102,6 @@ fun ProfileScreen(navController: NavController) {
         )
     }
 
-    // Tampilkan Dialog Gambar Fullscreen jika state-nya true
     if (showFullScreenImage && userProfileImageUri != null) {
         Dialog(onDismissRequest = { showFullScreenImage = false }) {
             AsyncImage(
@@ -115,6 +111,37 @@ fun ProfileScreen(navController: NavController) {
                 contentScale = ContentScale.Fit
             )
         }
+    }
+
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text("Log Out") },
+            text = { Text("Are you sure want to Log Out?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showLogoutDialog = false
+                        // TODO: Logika hapus sesi/data pengguna
+                        // Navigasi ke halaman login dan bersihkan semua halaman sebelumnya
+                        navController.navigate("signin") {
+                            popUpTo(0) { inclusive = true }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)) // Warna Hijau
+                ) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { showLogoutDialog = false }, // Hanya tutup dialog
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red) // Warna Merah
+                ) {
+                    Text("No")
+                }
+            }
+        )
     }
 
     Scaffold(
@@ -138,7 +165,7 @@ fun ProfileScreen(navController: NavController) {
             item {
                 Spacer(modifier = Modifier.height(24.dp))
                 ProfileHeader(
-                    imageUri = userProfileImageUri, // Menggunakan state global
+                    imageUri = userProfileImageUri,
                     onEditClick = { showOptionsDialog = true },
                     onProfileImageClick = {
                         if (userProfileImageUri != null) {
@@ -160,10 +187,13 @@ fun ProfileScreen(navController: NavController) {
                         text = item.text,
                         isLogout = item.isLogout,
                         onClick = {
-                            if (item.text == "Setting") {
-                                navController.navigate("setting")
+                            when (item.text) {
+                                "Setting" -> navController.navigate("setting")
+                                "Log Out" -> showLogoutDialog = true
+                                else -> {
+                                    // TODO: Navigasi untuk item lain
+                                }
                             }
-                            // TODO: Navigasi untuk item lain
                         }
                     )
                 }
@@ -272,12 +302,13 @@ fun ProfileMenuItem(
             painter = painterResource(id = iconRes),
             contentDescription = text,
             tint = if (isLogout) Color.Red else Color.DarkGray,
-            modifier = Modifier.size(40.dp)
+            modifier = Modifier.size(46.dp)
         )
         Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = text,
             fontWeight = FontWeight.SemiBold,
+            fontSize = 20.sp,
             color = if (isLogout) Color.Red else Color.DarkGray
         )
     }

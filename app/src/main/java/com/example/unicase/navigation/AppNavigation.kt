@@ -17,7 +17,7 @@ import com.example.unicase.features.product.ProductDetailScreen
 import com.example.unicase.features.profile.ProfileScreen
 import com.example.unicase.features.search.SearchScreen
 import com.example.unicase.features.splash.SplashScreen
-import com.example.unicase.model.dummyProducts
+
 
 @Composable
 fun AppNavigation() {
@@ -59,21 +59,7 @@ fun AppNavigation() {
             MainScreen(mainNavController = navController)
         }
         // -------------------------
-        composable(
-            route = "product_detail/{productId}",
-            arguments = listOf(navArgument("productId") { type = NavType.IntType })
-        ) { backStackEntry ->
-            val productId = backStackEntry.arguments?.getInt("productId") ?: 0
-            val product = dummyProducts.find { it.id == productId }
-            if (product != null) {
-                ProductDetailScreen(
-                    navController = navController,
-                    product = product
-                )
-            } else {
-                PlaceholderScreen(text = "Product Not Found")
-            }
-        }
+
         composable("search") {
             SearchScreen(navController = navController)
         }
@@ -86,6 +72,15 @@ fun AppNavigation() {
         composable("profile") {
             ProfileScreen(navController = navController)
         }
+
+        composable(
+            route = "product_detail/{id}",
+            arguments = listOf(navArgument("id") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val productId = backStackEntry.arguments?.getInt("id") ?: return@composable
+            ProductDetailScreen(productId = productId, navController = navController)
+        }
+
     }
 }
 

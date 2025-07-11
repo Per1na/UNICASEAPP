@@ -60,7 +60,7 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel = viewMo
             token?.let {
                 val prefs = UserPreferences(context)
                 prefs.saveToken(it)
-                prefs.saveName(name ?: "") // Simpan nama user yang login sekarang
+                prefs.saveName(name ?: "")
                 navController.navigate("main") {
                     popUpTo("signin") { inclusive = true }
                 }

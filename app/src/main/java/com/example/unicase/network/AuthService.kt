@@ -1,5 +1,8 @@
 package com.example.unicase.repository
 
+import com.example.unicase.repository.LoginRequest
+import com.example.unicase.repository.LoginResponse
+import com.example.unicase.repository.RegisterRequest
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -10,4 +13,5 @@ interface AuthService {
 
     @POST("register")
     suspend fun register(@Body request: RegisterRequest): Response<LoginResponse>
+
 }

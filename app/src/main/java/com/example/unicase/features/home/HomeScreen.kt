@@ -1,6 +1,6 @@
 package com.example.unicase.features.home
 
-import androidx.compose.foundation.Image
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -17,52 +17,64 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.Black
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import com.example.unicase.R
-import com.example.unicase.model.Product
-import com.example.unicase.model.dummyProducts
+import coil.compose.AsyncImage
+import com.example.unicase.repository.ApiClient
+import com.example.unicase.repository.ProductRepository
+import com.example.unicase.repository.ProductResponse
 import com.example.unicase.ui.theme.PrimaryBlue
+import com.example.unicase.viewmodel.ProductViewModel
+import com.example.unicase.viewmodel.ProductViewModelFactory
+import com.example.unicase.pricerupiah.formatRupiah
+import com.example.unicase.ui.theme.LightGray
 
 
 val categories = listOf("Minimalism", "Cartoon", "Anime", "Geometric", "Abstract")
 
 @Composable
 fun HomeScreen(navController: NavController) {
+    val viewModel: ProductViewModel = viewModel(
+        factory = ProductViewModelFactory(ProductRepository(ApiClient.apiService))
+    )
+    val products by viewModel.products
+
+
+
     LazyVerticalGrid(
         columns = GridCells.Fixed(2),
-        modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Bagian Header
         item(span = { GridItemSpan(maxLineSpan) }) {
             Column {
-                HomeTopBar(navController = navController)
+                HomeTopBar(navController)
                 CustomBanner()
                 CategorySection()
             }
         }
 
-        // Grid Produk
-        items(dummyProducts.size) { index ->
+        items(products.size) { index ->
+            val product = products[index]
             ProductCard(
-                product = dummyProducts[index],
+                product = product,
                 onClick = {
-                    // Navigasi ke halaman detail. Nantinya kita akan teruskan ID.
-                    // Pastikan rute "product_detail" sudah ada di NavHost Anda.
-                    navController.navigate("product_detail/${dummyProducts[index].id}")
+                    navController.navigate("product_detail/${product.id}")
                 }
             )
+
         }
     }
 }
+
 
 @Composable
 fun HomeTopBar(navController: NavController) {
@@ -172,35 +184,47 @@ fun CategorySection() {
 }
 
 @Composable
-fun ProductCard(product: Product, onClick: () -> Unit) {
+fun ProductCard(product: ProductResponse, onClick: () -> Unit) {
     Card(
         shape = RoundedCornerShape(8.dp),
-        modifier = Modifier.clickable(onClick = onClick)
+        modifier = Modifier.clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White),
+        border = BorderStroke(2.dp, LightGray)
+
     ) {
         Column {
-            Image(
-                painter = painterResource(id = product.imageRes),
-                contentDescription = product.name,
+            // MENGGUNAKAN COIL UNTUK LOAD IMAGE DARI URL
+            AsyncImage(
+
+                model = product.image?:"",
+                contentDescription = product.name?:"",
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f),
                 contentScale = ContentScale.Crop
             )
+
             Column(modifier = Modifier.padding(8.dp)) {
-                Text(product.name, fontWeight = FontWeight.Bold, maxLines = 1)
-                Text(product.variant, fontSize = 12.sp, color = Color.Gray, maxLines = 1)
-                Text(product.price, fontWeight = FontWeight.Bold, color = PrimaryBlue)
+                Text(product.name ?: "", fontWeight = FontWeight.Bold, maxLines = 1, color = Black)
+                Text(product.description ?:"", fontSize = 12.sp, color = Color.Gray, maxLines = 1)
+                Text(text = formatRupiah(product.price ?: 0), fontWeight = FontWeight.Bold, color = PrimaryBlue)
+
+                // Tambahkan rating dummy
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.Star, contentDescription = "Rating", tint = Color(0xFFFFC107), modifier = Modifier.size(14.dp))
-                    Text(product.rating.toString(), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                    Icon(
+                        Icons.Default.Star,
+                        contentDescription = "Rating",
+                        tint = Color(0xFFFFC107),
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Text("4.5", fontSize = 12.sp, fontWeight = FontWeight.Bold, color = Color.Gray) // dummy rating
                 }
+                Spacer(modifier = Modifier.height(8.dp))
+
+
+            }
             }
         }
     }
-}
 
-@Preview(showBackground = true)
-@Composable
-fun HomeScreenPreview() {
-    HomeScreen(navController = rememberNavController())
-}

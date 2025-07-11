@@ -80,6 +80,11 @@ dependencies {
     implementation ("com.squareup.retrofit2:retrofit:2.9.0")
     implementation ("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation ("androidx.lifecycle:lifecycle-viewmodel-ktx:2.6.2")
+    implementation ("androidx.lifecycle:lifecycle-runtime-ktx:2.6.2")
     implementation ("androidx.datastore:datastore-preferences:1.0.0")
+    implementation("io.coil-kt:coil-compose:2.2.2")
+    implementation ("com.google.accompanist:accompanist-pager:0.31.4-beta")
+    implementation ("com.google.accompanist:accompanist-pager-indicators:0.31.4-beta")
+
 
 }

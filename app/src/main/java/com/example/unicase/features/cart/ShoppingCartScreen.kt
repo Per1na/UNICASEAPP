@@ -1,5 +1,3 @@
-// Lokasi: app/src/main/java/com/example/unicase/features/cart/ShoppingCartScreen.kt
-
 package com.example.unicase.features.cart
 
 import androidx.compose.foundation.BorderStroke
@@ -23,32 +21,36 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import androidx.navigation.compose.rememberNavController
-import com.example.unicase.model.CartItem
-import com.example.unicase.model.cartItems // <-- IMPORT PENTING
-import com.example.unicase.model.dummyCartItems
+import coil.compose.AsyncImage
+import com.example.unicase.repository.ProductResponse
 import com.example.unicase.ui.theme.PrimaryBlue
 import com.example.unicase.ui.theme.UnicaseTheme
 
-// --- FUNGSI UTAMA YANG DIPERBARUI ---
+data class CartItem(
+    val product: ProductResponse,
+    var quantity: Int = 1
+)
+
+val cartItems = mutableStateListOf<CartItem>()
+
 @Composable
 fun ShoppingCartScreen(navController: NavController) {
-    // Membaca langsung dari list global `cartItems`
     if (cartItems.isEmpty()) {
-        EmptyCartView(navController = navController)
+        EmptyCartView(navController)
     } else {
-        FilledCartView(navController = navController, cartItems = cartItems)
+        FilledCartView(navController, cartItems)
     }
 }
 
-// Composable untuk tampilan keranjang berisi
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FilledCartView(navController: NavController, cartItems: List<CartItem>) {
+    val totalPrice = cartItems.sumOf { (it.product.price ?: 0.0) * it.quantity }
+
+
     Scaffold(
         topBar = {
             CenterAlignedTopAppBar(
@@ -61,7 +63,7 @@ fun FilledCartView(navController: NavController, cartItems: List<CartItem>) {
             )
         },
         bottomBar = {
-            CheckoutBottomBar(totalPrice = "Rp60.000")
+            CheckoutBottomBar(totalPrice = "Rp${"%,.0f".format(totalPrice)}")
         }
     ) { innerPadding ->
         LazyColumn(
@@ -71,14 +73,13 @@ fun FilledCartView(navController: NavController, cartItems: List<CartItem>) {
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            items(cartItems) { cartItem ->
-                CartItemRow(cartItem = cartItem)
+            items(cartItems) { item ->
+                CartItemRow(item)
             }
         }
     }
 }
 
-// Composable untuk satu baris item di keranjang
 @Composable
 fun CartItemRow(cartItem: CartItem) {
     var quantity by remember { mutableStateOf(cartItem.quantity) }
@@ -87,16 +88,13 @@ fun CartItemRow(cartItem: CartItem) {
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
-            .border(
-                border = BorderStroke(1.dp, Color.LightGray),
-                shape = RoundedCornerShape(12.dp)
-            )
+            .border(BorderStroke(1.dp, Color.LightGray), RoundedCornerShape(12.dp))
             .padding(horizontal = 8.dp, vertical = 12.dp)
     ) {
-        Checkbox(checked = true, onCheckedChange = { /*TODO*/ })
+        Checkbox(checked = true, onCheckedChange = { })
         Spacer(modifier = Modifier.width(8.dp))
-        Image(
-            painter = painterResource(id = cartItem.product.imageRes),
+        AsyncImage(
+            model = cartItem.product.image ?: "",
             contentDescription = cartItem.product.name,
             modifier = Modifier
                 .size(70.dp)
@@ -104,27 +102,31 @@ fun CartItemRow(cartItem: CartItem) {
         )
         Spacer(modifier = Modifier.width(16.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = cartItem.product.name, fontWeight = FontWeight.Bold, maxLines = 2, color = Color.Black)
+            Text(cartItem.product.name ?:"Produk", fontWeight = FontWeight.Bold, maxLines = 2, color = Color.Black)
             Spacer(modifier = Modifier.height(4.dp))
-            Text(text = cartItem.product.price, color = Color.Black, fontWeight = FontWeight.SemiBold)
+            Text("Rp${cartItem.product.price}", fontWeight = FontWeight.SemiBold, color = Color.Black)
         }
         Spacer(modifier = Modifier.width(16.dp))
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            IconButton(onClick = { if (quantity > 1) quantity-- }, modifier = Modifier.size(28.dp)) {
-                Icon(Icons.Default.Close, contentDescription = "Decrease quantity", tint = PrimaryBlue)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = {
+                if (quantity > 1) {
+                    quantity--
+                    cartItem.quantity = quantity
+                }
+            }) {
+                Icon(Icons.Default.Close, contentDescription = "Kurang", tint = PrimaryBlue)
             }
-            Text(text = "$quantity", fontWeight = FontWeight.Bold, color = PrimaryBlue)
-            IconButton(onClick = { quantity++ }, modifier = Modifier.size(28.dp)) {
-                Icon(Icons.Default.Add, contentDescription = "Increase quantity", tint = PrimaryBlue)
+            Text("$quantity", fontWeight = FontWeight.Bold, color = PrimaryBlue)
+            IconButton(onClick = {
+                quantity++
+                cartItem.quantity = quantity
+            }) {
+                Icon(Icons.Default.Add, contentDescription = "Tambah", tint = PrimaryBlue)
             }
         }
     }
 }
 
-// Composable untuk bottom bar checkout
 @Composable
 fun CheckoutBottomBar(totalPrice: String) {
     Surface(shadowElevation = 8.dp) {
@@ -136,13 +138,13 @@ fun CheckoutBottomBar(totalPrice: String) {
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Checkbox(checked = true, onCheckedChange = { /*TODO*/ })
+                Checkbox(checked = true, onCheckedChange = { })
                 Text("All", color = Color.Black)
             }
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(totalPrice, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black)
                 Spacer(modifier = Modifier.width(16.dp))
-                Button(onClick = { /*TODO: Navigasi ke Checkout*/ }) {
+                Button(onClick = { /* TODO: Navigasi ke halaman checkout */ }) {
                     Text("Checkout", color = Color.White)
                 }
             }
@@ -150,7 +152,6 @@ fun CheckoutBottomBar(totalPrice: String) {
     }
 }
 
-// Composable untuk tampilan keranjang kosong
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EmptyCartView(navController: NavController) {
@@ -181,34 +182,13 @@ fun EmptyCartView(navController: NavController) {
                 tint = Color.LightGray
             )
             Spacer(modifier = Modifier.height(16.dp))
-            Text(
-                text = "Your Cart is Empty",
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
-            )
+            Text("Your Cart is Empty", fontSize = 20.sp, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Find the perfect unique case for your phone!",
+                "Find the perfect unique case for your phone!",
                 color = Color.Gray,
                 textAlign = TextAlign.Center
             )
         }
-    }
-}
-
-// Preview untuk melihat kedua kondisi
-@Preview(name = "Filled Cart", showBackground = true)
-@Composable
-fun FilledCartScreenPreview() {
-    UnicaseTheme {
-        FilledCartView(rememberNavController(), dummyCartItems)
-    }
-}
-
-@Preview(name = "Empty Cart", showBackground = true)
-@Composable
-fun EmptyCartScreenPreview() {
-    UnicaseTheme {
-        EmptyCartView(rememberNavController())
     }
 }

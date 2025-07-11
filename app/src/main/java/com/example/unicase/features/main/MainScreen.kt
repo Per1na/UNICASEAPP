@@ -24,7 +24,6 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.unicase.features.home.HomeScreen
 import com.example.unicase.features.product.ProductDetailScreen
-import com.example.unicase.model.dummyProducts
 import com.example.unicase.ui.theme.PrimaryBlue
 import com.example.unicase.ui.theme.TertiaryWhite
 import com.example.unicase.ui.theme.UnicaseTheme

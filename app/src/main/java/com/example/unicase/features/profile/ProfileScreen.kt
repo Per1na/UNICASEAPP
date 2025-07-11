@@ -166,17 +166,17 @@ fun ProfileMenuItem(@DrawableRes
     val coroutineScope = rememberCoroutineScope()
     Row(
         modifier = Modifier.fillMaxWidth().clickable {
-                if (isLogout) {
-                    coroutineScope.launch {
-                        UserPreferences(context).clearToken()
-                        navController.navigate("signin") {
-                            popUpTo("main") { inclusive = true } // agar tidak bisa kembali pakai back
-                        }
+            if (isLogout) {
+                coroutineScope.launch {
+                    UserPreferences(context).clearToken()
+                    navController.navigate("signin") {
+                        popUpTo("main") { inclusive = true } // agar tidak bisa kembali pakai back
                     }
-                } else {
-                    // TODO: Aksi lainnya (misalnya navigasi ke halaman setting, shipped, dll)
                 }
+            } else {
+                // TODO: Aksi lainnya (misalnya navigasi ke halaman setting, shipped, dll)
             }
+        }
             .padding(vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -194,7 +194,7 @@ fun ProfileMenuItem(@DrawableRes
         )
 
     }
-    }
+}
 
 // ------------------------------
 

@@ -1,19 +1,12 @@
 package com.example.unicase.model
 
 import androidx.compose.runtime.mutableStateListOf
+import com.example.unicase.repository.ProductResponse
 
 // Data class untuk item di keranjang
 data class CartItem(
-    val product: Product,
-    var quantity: Int
+    val product: ProductResponse,
+    var quantity: Int = 1
 )
 
-// Ini adalah "keranjang asli" yang dinamis, awalnya kosong
-var cartItems = mutableStateListOf<CartItem>()
-
-// INI DATA BOHONGANNYA
-// Hanya digunakan untuk tujuan preview dan development awal.
-val dummyCartItems = listOf(
-    CartItem(product = dummyProducts[0], quantity = 1),
-    CartItem(product = dummyProducts[1], quantity = 2),
-)
+val cartItems = mutableStateListOf<CartItem>() // global cart list

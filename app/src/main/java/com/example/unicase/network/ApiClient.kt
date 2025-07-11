@@ -1,5 +1,6 @@
 package com.example.unicase.repository
 
+import com.example.unicase.network.ApiService
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import kotlin.getValue
@@ -14,4 +15,9 @@ object ApiClient {
             .addConverterFactory(GsonConverterFactory.create())
             .build()
     }
+    val apiService: ApiService by lazy {
+        instance.create(ApiService::class.java)
+    }
+
+
 }

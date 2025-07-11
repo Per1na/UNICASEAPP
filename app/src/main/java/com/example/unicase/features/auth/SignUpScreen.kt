@@ -298,7 +298,7 @@ fun SignUpScreen(navController: NavController, viewModel: AuthViewModel = viewMo
                     confirmPasswordError = "Confirm Password does not match"
                 }
 
-                // Jika sudah semua
+
                 if (formIsValid) {
                     viewModel.register(name, email, password, confirmPassword)
 

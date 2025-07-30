@@ -16,12 +16,15 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.ShoppingCart
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -30,17 +33,17 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
-import com.example.unicase.model.ColorOption
-import com.example.unicase.model.Product
+import coil.compose.AsyncImage
 import com.example.unicase.R
 import com.example.unicase.model.CartItem
-import com.example.unicase.model.cartItems
+import com.example.unicase.model.ColorOption
+import com.example.unicase.model.Product
+import com.example.unicase.model.globalCartItems
 import com.example.unicase.model.dummyProducts
 import com.example.unicase.ui.theme.Poppins
 import com.example.unicase.ui.theme.PrimaryBlue
@@ -50,6 +53,11 @@ import com.example.unicase.ui.theme.UnicaseTheme
 @Composable
 fun ProductDetailScreen(navController: NavController, product: Product) {
     var isFavorited by remember { mutableStateOf(false) }
+
+    // State untuk mengontrol bottom sheet
+    var showCartBottomSheet by remember { mutableStateOf(false) }
+    val sheetState = rememberModalBottomSheetState()
+    val context = LocalContext.current
 
     Scaffold(
         topBar = {
@@ -72,7 +80,11 @@ fun ProductDetailScreen(navController: NavController, product: Product) {
             )
         },
         bottomBar = {
-            BottomBar(product = product)
+            // Tombol Add to Cart sekarang hanya memicu bottom sheet
+            BottomBar(
+                price = product.price,
+                onAddToCartClicked = { showCartBottomSheet = true }
+            )
         }
     ) { innerPadding ->
         LazyColumn(
@@ -81,36 +93,113 @@ fun ProductDetailScreen(navController: NavController, product: Product) {
                 .padding(innerPadding),
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
-            // Point 2: Image Carousel
-            item {
-                ProductImageCarousel(images = product.images)
-            }
-            // Point 3: Info Produk (Kategori, Nama, Rating)
+            item { ProductImageCarousel(images = product.images ?: emptyList()) }
             item {
                 ProductInfoSection(
-                    category = "Case Category", // Placeholder
+                    category = "Case Category",
                     name = product.fullName,
-                    rating = product.rating,
-                    reviewCount = product.reviewCount
+                    rating = product.rating ?: 0.0,
+                    reviewCount = product.reviewCount ?: 0
                 )
             }
-            // Point 4: Deskripsi Produk
-            item {
-                ProductDescriptionSection(description = product.description)
-            }
-            // Point 5: Pilihan Warna
-            item {
-                ColorSelectorSection(colors = product.colors)
-            }
-            // Point 6 & 7: Ulasan Pelanggan
-            item {
-                CustomerReviewSection(reviewCount = product.reviewCount)
+            item { ProductDescriptionSection(description = product.description ?: "") }
+            item { CustomerReviewSection(reviewCount = product.reviewCount ?: 0) }
+        }
+
+        // --- BOTTOM SHEET DI SINI ---
+        if (showCartBottomSheet) {
+            ModalBottomSheet(
+                onDismissRequest = { showCartBottomSheet = false },
+                sheetState = sheetState
+            ) {
+                AddToCartBottomSheetContent(
+                    product = product,
+                    onConfirm = { selectedColor, quantity ->
+                        // Logika untuk menambahkan ke keranjang
+                        val existingItem = globalCartItems.find { it.product.id == product.id && it.product.variant == selectedColor.name }
+
+                        if (existingItem != null) {
+                            existingItem.quantity += quantity
+                        } else {
+                            globalCartItems.add(CartItem(product = product.copy(variant = selectedColor.name), quantity = quantity))
+                        }
+
+                        showCartBottomSheet = false
+                        Toast.makeText(context, "Dimasukkan ke Keranjang", Toast.LENGTH_SHORT).show()
+                    }
+                )
             }
         }
     }
 }
 
-// Point 2: Composable untuk Image Carousel
+// Composable baru untuk konten di dalam bottom sheet
+@Composable
+fun AddToCartBottomSheetContent(
+    product: Product,
+    onConfirm: (selectedColor: ColorOption, quantity: Int) -> Unit
+) {
+    var quantity by rememberSaveable { mutableIntStateOf(1) }
+    var selectedColor by remember { mutableStateOf(product.colors?.first() ?: ColorOption("Default", Color.Gray)) }
+
+    Column(modifier = Modifier.padding(16.dp)) {
+        Row(verticalAlignment = Alignment.Bottom) {
+            if (product.imageUri != null) {
+                AsyncImage(model = product.imageUri, contentDescription = product.name, modifier = Modifier.size(100.dp).clip(RoundedCornerShape(8.dp)), contentScale = ContentScale.Crop)
+            } else {
+                Image(painter = painterResource(id = product.imageRes), contentDescription = product.name, modifier = Modifier.size(100.dp).clip(RoundedCornerShape(8.dp)))
+            }
+            Spacer(modifier = Modifier.width(16.dp))
+            Column {
+                Text(product.price, style = MaterialTheme.typography.titleLarge, color = PrimaryBlue, fontWeight = FontWeight.Bold)
+                Text("Stok: 39", style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
+            }
+        }
+        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+
+        product.colors?.let { colors ->
+            ColorSelectorSection(
+                colors = colors,
+                selectedColor = selectedColor,
+                onColorSelected = { selectedColor = it }
+            )
+        }
+        HorizontalDivider(modifier = Modifier.padding(vertical = 16.dp))
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("Jumlah", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.border(BorderStroke(1.dp, Color.LightGray), RoundedCornerShape(8.dp))
+            ) {
+                IconButton(onClick = { if (quantity > 1) quantity-- }, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.Remove, "Decrease quantity")
+                }
+                Text("$quantity", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                IconButton(onClick = { quantity++ }, modifier = Modifier.size(32.dp)) {
+                    Icon(Icons.Default.Add, "Increase quantity")
+                }
+            }
+        }
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Button(
+            onClick = { onConfirm(selectedColor, quantity) },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(50.dp)
+        ) {
+            Text("Masukkan Keranjang")
+        }
+    }
+}
+
+
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun ProductImageCarousel(images: List<Int>) {
@@ -130,10 +219,9 @@ fun ProductImageCarousel(images: List<Int>) {
             )
         }
         Spacer(modifier = Modifier.height(8.dp))
-        // Indikator titik
         Row(
             horizontalArrangement = Arrangement.Center,
-            modifier = Modifier.padding(vertical = 8.dp)
+            modifier = Modifier.padding(vertical = 8.dp).fillMaxWidth()
         ) {
             repeat(pagerState.pageCount) { iteration ->
                 val color = if (pagerState.currentPage == iteration) PrimaryBlue else Color.LightGray
@@ -149,37 +237,32 @@ fun ProductImageCarousel(images: List<Int>) {
     }
 }
 
-
-// Point 3: Composable untuk Info Produk
 @Composable
 fun ProductInfoSection(category: String, name: String, rating: Double, reviewCount: Int) {
     Column(modifier = Modifier.padding(16.dp)) {
         Text(category, style = MaterialTheme.typography.bodyMedium, color = Color.Gray)
         Spacer(modifier = Modifier.height(4.dp))
-        Text(name, style = MaterialTheme.typography.headlineSmall, fontWeight = FontWeight.SemiBold, color = Color.Black)
+        Text(name, style = MaterialTheme.typography.headlineSmall, fontFamily = Poppins, color = Color.Black ,fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Star, contentDescription = "Rating", tint = Color(0xFFFFC107))
             Spacer(modifier = Modifier.width(4.dp))
-            Text("$rating", fontWeight = FontWeight.Bold, color = Color.Black)
+            Text("$rating", fontFamily = Poppins, color = Color.Black , fontWeight = FontWeight.Bold)
             Text(" ($reviewCount reviews)", color = Color.Gray, modifier = Modifier.padding(start = 4.dp))
         }
     }
 }
 
-// Point 4: Composable untuk Deskripsi
 @Composable
 fun ProductDescriptionSection(description: String) {
     var isExpanded by remember { mutableStateOf(false) }
     Column(modifier = Modifier.padding(16.dp)) {
-        Text("Product Details", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.Black)
+        Text("Product Details", style = MaterialTheme.typography.titleMedium, fontFamily = Poppins ,color = Color.Black , fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = description,
-            fontFamily = Poppins,
-            fontWeight = FontWeight.Normal,
-            color = Color.Black,
             style = MaterialTheme.typography.bodyMedium,
+            color = Color.Gray,
             maxLines = if (isExpanded) Int.MAX_VALUE else 3
         )
         Text(
@@ -193,18 +276,20 @@ fun ProductDescriptionSection(description: String) {
     }
 }
 
-// Point 5: Composable untuk Pilihan Warna
 @Composable
-fun ColorSelectorSection(colors: List<ColorOption>) {
-    var selectedColorName by remember { mutableStateOf(colors.first().name) }
-    Column(modifier = Modifier.padding(16.dp)) {
+fun ColorSelectorSection(
+    colors: List<ColorOption>,
+    selectedColor: ColorOption,
+    onColorSelected: (ColorOption) -> Unit
+) {
+    Column {
         Text("Color", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
         Spacer(modifier = Modifier.height(8.dp))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             items(colors) { colorOption ->
-                val isSelected = selectedColorName == colorOption.name
+                val isSelected = selectedColor.name == colorOption.name
                 Button(
-                    onClick = { selectedColorName = colorOption.name },
+                    onClick = { onColorSelected(colorOption) },
                     shape = RoundedCornerShape(8.dp),
                     border = BorderStroke(1.dp, if(isSelected) PrimaryBlue else Color.LightGray),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = if(isSelected) PrimaryBlue else Color.Gray)
@@ -216,7 +301,6 @@ fun ColorSelectorSection(colors: List<ColorOption>) {
     }
 }
 
-// Point 6 & 7: Composable untuk Ulasan
 @Composable
 fun CustomerReviewSection(reviewCount: Int) {
     Column(modifier = Modifier.padding(16.dp)) {
@@ -225,11 +309,10 @@ fun CustomerReviewSection(reviewCount: Int) {
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text("Customer reviews ($reviewCount)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+            Text("Customer reviews ($reviewCount)", style = MaterialTheme.typography.titleMedium, fontFamily = Poppins, color = Color.Black , fontWeight = FontWeight.Bold)
             Text("See all", color = PrimaryBlue, fontWeight = FontWeight.Bold, modifier = Modifier.clickable { /*TODO*/ })
         }
         Spacer(modifier = Modifier.height(16.dp))
-        // Contoh satu kartu ulasan
         ReviewCard()
     }
 }
@@ -243,7 +326,7 @@ fun ReviewCard() {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("N**a", fontWeight = FontWeight.Bold)
+                Text("N**a", fontFamily = Poppins, color = Color.Black ,fontWeight = FontWeight.Bold)
                 Spacer(modifier = Modifier.weight(1f))
                 Row {
                     repeat(5) {
@@ -252,14 +335,12 @@ fun ReviewCard() {
                 }
             }
             Spacer(modifier = Modifier.height(4.dp))
-            Text("Nina", fontWeight = FontWeight.Bold, color = Color.Black)
-            Spacer(modifier = Modifier.height(4.dp))
             Text("Variant: Black - Ipong 200 pro mex mex Silitcon ketupat", fontSize = 12.sp, color = Color.Gray)
             Spacer(modifier = Modifier.height(8.dp))
-            Text("Great, just as ordered. I'll place another order here tomorrow", style = MaterialTheme.typography.bodyMedium, color = Color.Black)
+            Text("Great, just as ordered. I'll place another order here tomorrow", style = MaterialTheme.typography.bodyMedium)
             Spacer(modifier = Modifier.height(8.dp))
             Image(
-                painter = painterResource(id = R.drawable.gambar_ws1), // Siapkan gambar ini
+                painter = painterResource(id = R.drawable.gambar_ws1),
                 contentDescription = "Review image",
                 modifier = Modifier
                     .size(80.dp)
@@ -269,12 +350,8 @@ fun ReviewCard() {
     }
 }
 
-
-// Point 8: Composable untuk Bottom Bar
 @Composable
-fun BottomBar(product: Product) {
-    val context = LocalContext.current
-
+fun BottomBar(price: String, onAddToCartClicked: () -> Unit) {
     Surface(shadowElevation = 8.dp) {
         Row(
             modifier = Modifier
@@ -285,22 +362,11 @@ fun BottomBar(product: Product) {
         ) {
             Column {
                 Text("Total Price", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                Text(product.price, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = PrimaryBlue)
+                Text(price, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = PrimaryBlue)
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { /*TODO: Langsung ke checkout*/ }) {
-                    Text("Buy")
-                }
-                Button(onClick = {
-                    val existingItem = cartItems.find { it.product.id == product.id }
-
-                    if (existingItem != null) {
-                        existingItem.quantity++
-                    } else {
-                        cartItems.add(CartItem(product = product, quantity = 1))
-                    }
-                    Toast.makeText(context, "${product.name} added to cart", Toast.LENGTH_SHORT).show()
-                }) {
+                OutlinedButton(onClick = { /*TODO*/ }) { Text("Buy") }
+                Button(onClick = onAddToCartClicked) {
                     Icon(Icons.Default.ShoppingCart, contentDescription = "Add to Cart")
                     Spacer(modifier = Modifier.width(4.dp))
                     Text("Add to Cart")
@@ -314,6 +380,6 @@ fun BottomBar(product: Product) {
 @Composable
 fun ProductDetailScreenPreview() {
     UnicaseTheme {
-        ProductDetailScreen(navController = rememberNavController(), product = dummyProducts.first())
+        ProductDetailScreen(rememberNavController(), dummyProducts.first())
     }
 }

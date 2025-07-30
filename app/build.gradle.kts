@@ -59,6 +59,7 @@ dependencies {
 
     // Tambahkan dependensi ini
     // 1. Navigation for Compose
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.8.1")
     implementation("androidx.navigation:navigation-compose:2.7.7")
 
     // 2. Coil for Image Loading (akan berguna nanti)
@@ -80,4 +81,9 @@ dependencies {
     implementation("io.coil-kt:coil-compose:2.5.0")
     implementation("androidx.activity:activity-compose:1.8.0")
     implementation("androidx.compose.ui:ui:1.6.0")
+
+    // 8. Save Photo
+    implementation("dev.shreyaspatil:capturable:1.0.3")
+
+
 }

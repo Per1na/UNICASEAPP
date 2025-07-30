@@ -1,8 +1,7 @@
-// Lokasi: app/src/main/java/com/example/unicase/navigation/AppNavigation.kt
-
 package com.example.unicase.navigation
 
 import androidx.compose.runtime.Composable
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -12,6 +11,7 @@ import com.example.unicase.features.auth.*
 import com.example.unicase.features.cart.ShoppingCartScreen
 import com.example.unicase.features.checkout.CheckoutScreen
 import com.example.unicase.features.customization.CustomCaseScreen
+import com.example.unicase.features.customization.CustomizationViewModel
 import com.example.unicase.features.main.MainScreen
 import com.example.unicase.features.main.PlaceholderScreen
 import com.example.unicase.features.notification.NotificationScreen
@@ -27,6 +27,11 @@ import com.example.unicase.model.dummyProducts
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController() // Ini "Manajer Utama"
+
+    // --- PERUBAHAN PENTING 1 ---
+    // Buat ViewModel di sini agar bisa dibagikan ke semua layar di bawahnya.
+    val customizationViewModel: CustomizationViewModel = viewModel()
+
     NavHost(
         navController = navController,
         startDestination = "splash"
@@ -58,12 +63,9 @@ fun AppNavigation() {
         composable("password_success") {
             PasswordSuccessScreen(navController = navController)
         }
-        // --- PERUBAHAN DI SINI ---
         composable("main") {
-            // Berikan NavController utama ke MainScreen
             MainScreen(mainNavController = navController)
         }
-        // -------------------------
         composable(
             route = "product_detail/{productId}",
             arguments = listOf(navArgument("productId") { type = NavType.IntType })
@@ -100,12 +102,20 @@ fun AppNavigation() {
         composable("change_name") {
             ChangeNameScreen(navController = navController)
         }
+
+        // --- PERUBAHAN PENTING 2 ---
+        // Sekarang teruskan ViewModel yang sama ke kedua layar.
         composable("custom_case") {
-            CustomCaseScreen(navController = navController)
+            CustomCaseScreen(
+                navController = navController,
+                customizationViewModel = customizationViewModel
+            )
         }
         composable("checkout") {
-            CheckoutScreen(navController = navController)
+            CheckoutScreen(
+                navController = navController,
+                customizationViewModel = customizationViewModel
+            )
         }
     }
 }
-

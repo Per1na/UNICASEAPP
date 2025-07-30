@@ -14,7 +14,6 @@ import androidx.navigation.NavController
 import com.example.unicase.R
 import com.example.unicase.ui.theme.BrandBlue
 import com.example.unicase.ui.theme.UnicaseTheme
-import com.example.unicase.ui.theme.TertiaryWhite
 import kotlinx.coroutines.delay
 
 @Composable

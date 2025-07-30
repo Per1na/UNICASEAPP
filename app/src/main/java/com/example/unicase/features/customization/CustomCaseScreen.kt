@@ -18,7 +18,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
@@ -35,6 +34,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
@@ -44,40 +44,21 @@ import com.example.unicase.ui.theme.PrimaryBlue
 import com.example.unicase.ui.theme.UnicaseTheme
 import java.util.UUID
 
-sealed class DesignLayer(
-    val id: UUID = UUID.randomUUID(),
-    var scale: MutableState<Float> = mutableStateOf(1f),
-    var offsetX: MutableState<Float> = mutableStateOf(0f),
-    var offsetY: MutableState<Float> = mutableStateOf(0f),
-    var rotation: MutableState<Float> = mutableStateOf(0f)
-)
-
-data class ImageLayer(val uri: Uri) : DesignLayer()
-data class TextLayer(var text: String, var color: MutableState<Color>) : DesignLayer()
-
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomCaseScreen(navController: NavController) {
-    var layers by remember { mutableStateOf<List<DesignLayer>>(emptyList()) }
-    var selectedLayerId by remember { mutableStateOf<UUID?>(null) }
+fun CustomCaseScreen(
+    navController: NavController,
+    customizationViewModel: CustomizationViewModel = viewModel()
+) {
+    val layers by customizationViewModel.layers
+    val selectedLayerId by customizationViewModel.selectedLayerId
     var showAddTextDialog by remember { mutableStateOf(false) }
 
     val galleryLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent(),
         onResult = { uri ->
             if (uri != null) {
-                val newImageLayer = ImageLayer(uri)
-                val existingImageIndex = layers.indexOfFirst { it is ImageLayer }
-
-                val newLayers = layers.toMutableList()
-                if (existingImageIndex != -1) {
-                    newLayers[existingImageIndex] = newImageLayer
-                } else {
-                    newLayers.add(newImageLayer)
-                }
-                layers = newLayers
-                selectedLayerId = newImageLayer.id
+                customizationViewModel.addImageLayer(uri)
             }
         }
     )
@@ -86,11 +67,7 @@ fun CustomCaseScreen(navController: NavController) {
         AddTextDialog(
             onDismiss = { showAddTextDialog = false },
             onConfirm = { text, color ->
-                if (text.isNotEmpty()) {
-                    val newLayer = TextLayer(text, mutableStateOf(color))
-                    layers = layers + newLayer
-                    selectedLayerId = newLayer.id
-                }
+                customizationViewModel.addTextLayer(text, color)
                 showAddTextDialog = false
             }
         )
@@ -161,7 +138,7 @@ fun CustomCaseScreen(navController: NavController) {
                         Box(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .clickable { selectedLayerId = layer.id }
+                                .clickable { customizationViewModel.setSelectedLayerId(layer.id) }
                                 .graphicsLayer(
                                     scaleX = layer.scale.value,
                                     scaleY = layer.scale.value,
@@ -234,7 +211,7 @@ fun CustomCaseScreen(navController: NavController) {
                             is TextLayer -> layer.text
                         }
                         OutlinedButton(
-                            onClick = { selectedLayerId = layer.id },
+                            onClick = { customizationViewModel.setSelectedLayerId(layer.id) },
                             colors = ButtonDefaults.outlinedButtonColors(
                                 containerColor = if (isSelected) PrimaryBlue else Color.Transparent,
                             )
@@ -244,12 +221,7 @@ fun CustomCaseScreen(navController: NavController) {
                     }
                 }
                 Button(
-                    onClick = {
-                        if(selectedLayerId != null) {
-                            layers = layers.filterNot { it.id == selectedLayerId }
-                            selectedLayerId = layers.lastOrNull()?.id
-                        }
-                    },
+                    onClick = { customizationViewModel.deleteSelectedLayer() },
                     colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
                     enabled = selectedLayerId != null,
                     modifier = Modifier.padding(top = 8.dp)
@@ -261,7 +233,7 @@ fun CustomCaseScreen(navController: NavController) {
             }
 
             Spacer(modifier = Modifier.height(24.dp))
-            CustomizationOptionSection()
+            CustomizationOptionSection(customizationViewModel)
         }
     }
 }
@@ -321,24 +293,26 @@ fun AddTextDialog(onDismiss: () -> Unit, onConfirm: (String, Color) -> Unit) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CustomizationOptionSection() {
-
+fun CustomizationOptionSection(
+    customizationViewModel: CustomizationViewModel
+) {
     val brands = listOf("Samsung", "Apple", "Xiaomi", "Oppo", "Vivo")
-
     val phoneTypes = mapOf(
         "Samsung" to listOf("Samsung Z Flip5", "Galaxy S24 Ultra", "Galaxy A55"),
         "Apple" to listOf("iPhone 15 Pro Max", "iPhone 15", "iPhone 14"),
-        "Xiaomi" to listOf("Xiaomi 14", "Redmi Note 13 Pro", "Poco F6")
+        "Xiaomi" to listOf("Xiaomi 14", "Redmi Note 13 Pro", "Poco F6"),
+        "Oppo" to listOf("Oppo Find N3", "Reno 11 Pro"),
+        "Vivo" to listOf("Vivo X100 Pro", "V30 Pro")
     )
 
-    var selectedBrand by remember { mutableStateOf(brands.first()) }
-    var selectedType by remember { mutableStateOf(phoneTypes[selectedBrand]?.first() ?: "") }
+    val selectedBrand by customizationViewModel.phoneBrand
+    val selectedType by customizationViewModel.phoneType
     var isBrandDropdownExpanded by remember { mutableStateOf(false) }
     var isTypeDropdownExpanded by remember { mutableStateOf(false) }
     var additionalDescription by remember { mutableStateOf("") }
 
     LaunchedEffect(selectedBrand) {
-        selectedType = phoneTypes[selectedBrand]?.first() ?: ""
+        customizationViewModel.setPhoneType(phoneTypes[selectedBrand]?.first() ?: "")
     }
 
     Column(
@@ -361,11 +335,7 @@ fun CustomizationOptionSection() {
         }
 
         Column {
-            Text("Select brand",
-                style = MaterialTheme.typography.titleMedium,
-                fontFamily = Poppins,
-                color = Color.Black,
-                fontWeight = FontWeight.Bold)
+            Text("Select brand", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
             ExposedDropdownMenuBox(
                 expanded = isBrandDropdownExpanded,
@@ -387,7 +357,7 @@ fun CustomizationOptionSection() {
                         DropdownMenuItem(
                             text = { Text(brand) },
                             onClick = {
-                                selectedBrand = brand
+                                customizationViewModel.setPhoneBrand(brand, phoneTypes[brand]?.first() ?: "")
                                 isBrandDropdownExpanded = false
                             }
                         )
@@ -397,11 +367,7 @@ fun CustomizationOptionSection() {
         }
 
         Column {
-            Text("Select Type",
-                style = MaterialTheme.typography.titleMedium,
-                fontFamily = Poppins,
-                color = Color.Black,
-                fontWeight = FontWeight.Bold)
+            Text("Select Type", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
             ExposedDropdownMenuBox(
                 expanded = isTypeDropdownExpanded,
@@ -423,7 +389,7 @@ fun CustomizationOptionSection() {
                         DropdownMenuItem(
                             text = { Text(type) },
                             onClick = {
-                                selectedType = type
+                                customizationViewModel.setPhoneType(type)
                                 isTypeDropdownExpanded = false
                             }
                         )
@@ -453,15 +419,14 @@ fun CustomizationOptionSection() {
     }
 }
 
-
 @Composable
 fun PriceRow(label: String, price: String) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label, color = Color.LightGray)
-        Text(price, fontWeight = FontWeight.SemiBold, color = Color.Black)
+        Text(label, color = Color.Gray)
+        Text(price, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -469,6 +434,6 @@ fun PriceRow(label: String, price: String) {
 @Preview(showBackground = true)
 fun PreviewCustomCaseScreen() {
     UnicaseTheme {
-        CustomCaseScreen(rememberNavController())
+        CustomCaseScreen(rememberNavController(), viewModel())
     }
 }

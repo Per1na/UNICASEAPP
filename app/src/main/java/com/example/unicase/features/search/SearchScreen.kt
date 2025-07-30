@@ -70,7 +70,7 @@ fun SearchScreen(navController: NavController) {
                 }
             )
         }
-        Divider() // Garis pemisah
+        HorizontalDivider() // Garis pemisah
 
         // Daftar Riwayat Pencarian
         LazyColumn(

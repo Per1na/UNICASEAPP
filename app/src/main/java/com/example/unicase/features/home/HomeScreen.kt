@@ -25,12 +25,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import com.example.unicase.R
 import com.example.unicase.model.Product
 import com.example.unicase.model.dummyProducts
 import com.example.unicase.ui.theme.PrimaryBlue
 
-
-val categories = listOf("Minimalism", "Cartoon", "Anime", "Geometric", "Abstract")
+val categories = listOf("Minimalism", "Kartun", "Animek", "Geome", "Abstrak")
 
 @Composable
 fun HomeScreen(navController: NavController) {
@@ -40,22 +40,17 @@ fun HomeScreen(navController: NavController) {
         verticalArrangement = Arrangement.spacedBy(16.dp),
         horizontalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        // Bagian Header
-        item(span = { GridItemSpan(maxLineSpan) }) {
+        item(span = { GridItemSpan(2) }) {
             Column {
                 HomeTopBar(navController = navController)
                 CustomBanner(navController = navController)
                 CategorySection()
             }
         }
-
-        // Grid Produk
         items(dummyProducts.size) { index ->
             ProductCard(
                 product = dummyProducts[index],
                 onClick = {
-                    // Navigasi ke halaman detail. Nantinya kita akan teruskan ID.
-                    // Pastikan rute "product_detail" sudah ada di NavHost Anda.
                     navController.navigate("product_detail/${dummyProducts[index].id}")
                 }
             )
@@ -85,17 +80,15 @@ fun HomeTopBar(navController: NavController) {
                 Text("Search", color = Color.Gray)
             }
         }
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
             IconButton(onClick = { navController.navigate("notification") }) {
-                Icon(Icons.Default.Notifications, contentDescription = "Notifications", tint = PrimaryBlue)
+                Icon(Icons.Default.Notifications, contentDescription = "Notifications")
             }
             IconButton(onClick = { navController.navigate("cart") }) {
-                Icon(Icons.Default.ShoppingCart, contentDescription = "Shopping Cart", tint = PrimaryBlue)
+                Icon(Icons.Default.ShoppingCart, contentDescription = "Shopping Cart")
             }
             IconButton(onClick = { navController.navigate("profile") }) {
-                Icon(Icons.Default.Person, contentDescription = "Profile", tint = PrimaryBlue)
+                Icon(Icons.Default.Person, contentDescription = "Profile")
             }
         }
     }
@@ -142,7 +135,7 @@ fun CustomBanner(navController: NavController) {
 
 @Composable
 fun CategorySection() {
-    var selectedCategoryIndex by remember { mutableIntStateOf(0) }
+    var selectedCategoryIndex by remember { mutableStateOf(0) }
     Column(modifier = Modifier.padding(vertical = 16.dp)) {
         Text("Case Category", fontWeight = FontWeight.Bold, fontSize = 16.sp)
         Spacer(modifier = Modifier.height(16.dp))
@@ -198,6 +191,7 @@ fun ProductCard(product: Product, onClick: () -> Unit) {
         }
     }
 }
+
 @Preview(showBackground = true)
 @Composable
 fun HomeScreenPreview() {

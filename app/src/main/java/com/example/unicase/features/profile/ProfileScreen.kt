@@ -1,3 +1,5 @@
+// Lokasi: app/src/main/java/com/example/unicase/features/profile/ProfileScreen.kt
+
 package com.example.unicase.features.profile
 
 import android.net.Uri
@@ -25,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
@@ -62,11 +65,13 @@ fun ProfileScreen(navController: NavController) {
         ProfileMenuItemData(R.drawable.ic_log_out, "Log Out", isLogout = true)
     )
 
+    // State untuk dialog dan launcher
     var showOptionsDialog by remember { mutableStateOf(false) }
     var showFullScreenImage by remember { mutableStateOf(false) }
-    var showLogoutDialog by remember { mutableStateOf(false) } // State untuk dialog logout
-
+    var showLogoutDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
+
+    // --- PENGECEKAN MODE PREVIEW ---
     val isNotInPreview = !LocalInspectionMode.current
 
     val galleryLauncher = rememberLauncherForActivityResult(
@@ -74,12 +79,15 @@ fun ProfileScreen(navController: NavController) {
         onResult = { uri -> userProfileImageUri = uri }
     )
 
+    // Siapkan URI sementara HANYA jika tidak dalam mode Preview
     val tempImageUri = if (isNotInPreview) {
         remember {
             val file = File(context.cacheDir, "temp_image.jpg")
             FileProvider.getUriForFile(context, "${context.packageName}.provider", file)
         }
-    } else { null }
+    } else {
+        null // Beri nilai null jika dalam mode Preview
+    }
 
     val cameraLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.TakePicture(),
@@ -97,7 +105,10 @@ fun ProfileScreen(navController: NavController) {
             },
             onCameraClick = {
                 showOptionsDialog = false
-                tempImageUri?.let { uri -> cameraLauncher.launch(uri) }
+                // Gunakan safe call (?) agar tidak crash jika URI null (saat preview)
+                tempImageUri?.let { uri ->
+                    cameraLauncher.launch(uri)
+                }
             }
         )
     }
@@ -122,24 +133,18 @@ fun ProfileScreen(navController: NavController) {
                 Button(
                     onClick = {
                         showLogoutDialog = false
-                        // TODO: Logika hapus sesi/data pengguna
-                        // Navigasi ke halaman login dan bersihkan semua halaman sebelumnya
                         navController.navigate("signin") {
                             popUpTo(0) { inclusive = true }
                         }
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50)) // Warna Hijau
-                ) {
-                    Text("Yes")
-                }
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF4CAF50))
+                ) { Text("Yes") }
             },
             dismissButton = {
                 Button(
-                    onClick = { showLogoutDialog = false }, // Hanya tutup dialog
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red) // Warna Merah
-                ) {
-                    Text("No")
-                }
+                    onClick = { showLogoutDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.Red)
+                ) { Text("No") }
             }
         )
     }
@@ -175,11 +180,9 @@ fun ProfileScreen(navController: NavController) {
                 )
                 Spacer(modifier = Modifier.height(32.dp))
             }
-
             item {
                 HorizontalDivider(modifier = Modifier.padding(horizontal = 16.dp))
             }
-
             items(menuItems) { item ->
                 Box(modifier = Modifier.padding(horizontal = 16.dp)) {
                     ProfileMenuItem(
@@ -190,9 +193,7 @@ fun ProfileScreen(navController: NavController) {
                             when (item.text) {
                                 "Setting" -> navController.navigate("setting")
                                 "Log Out" -> showLogoutDialog = true
-                                else -> {
-                                    // TODO: Navigasi untuk item lain
-                                }
+                                else -> { /* TODO */ }
                             }
                         }
                     )
@@ -203,11 +204,7 @@ fun ProfileScreen(navController: NavController) {
 }
 
 @Composable
-fun ImagePickerOptionsDialog(
-    onDismissRequest: () -> Unit,
-    onGalleryClick: () -> Unit,
-    onCameraClick: () -> Unit
-) {
+fun ImagePickerOptionsDialog(onDismissRequest: () -> Unit, onGalleryClick: () -> Unit, onCameraClick: () -> Unit) {
     AlertDialog(
         onDismissRequest = onDismissRequest,
         title = { Text("Ganti Foto Profil") },
@@ -244,21 +241,14 @@ fun ProfileHeader(imageUri: Uri?, onEditClick: () -> Unit, onProfileImageClick: 
                 AsyncImage(
                     model = imageUri,
                     contentDescription = "Profile Picture",
-                    modifier = Modifier
-                        .size(100.dp)
-                        .clip(CircleShape)
-                        .clickable(onClick = onProfileImageClick),
+                    modifier = Modifier.size(100.dp).clip(CircleShape).clickable(onClick = onProfileImageClick),
                     contentScale = ContentScale.Crop
                 )
             } else {
                 Icon(
                     imageVector = Icons.Default.AccountCircle,
                     contentDescription = "Profile Picture",
-                    modifier = Modifier
-                        .size(100.dp)
-                        .clip(CircleShape)
-                        .background(PrimaryBlue)
-                        .clickable(onClick = onProfileImageClick),
+                    modifier = Modifier.size(100.dp).clip(CircleShape).background(PrimaryBlue).clickable(onClick = onProfileImageClick),
                     tint = Color.White
                 )
             }
@@ -302,18 +292,16 @@ fun ProfileMenuItem(
             painter = painterResource(id = iconRes),
             contentDescription = text,
             tint = if (isLogout) Color.Red else Color.DarkGray,
-            modifier = Modifier.size(46.dp)
+            modifier = Modifier.size(24.dp)
         )
         Spacer(modifier = Modifier.width(16.dp))
         Text(
             text = text,
             fontWeight = FontWeight.SemiBold,
-            fontSize = 20.sp,
             color = if (isLogout) Color.Red else Color.DarkGray
         )
     }
 }
-
 
 @Preview(showBackground = true)
 @Composable

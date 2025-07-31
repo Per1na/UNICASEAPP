@@ -22,12 +22,10 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalInspectionMode
@@ -191,6 +189,9 @@ fun ProfileScreen(navController: NavController) {
                         isLogout = item.isLogout,
                         onClick = {
                             when (item.text) {
+                                "Pay" -> navController.navigate("transactionHistory")
+                                "Shipped" -> navController.navigate("transactionHistory")
+                                "Delivered" -> navController.navigate("transactionHistory")
                                 "Setting" -> navController.navigate("setting")
                                 "Log Out" -> showLogoutDialog = true
                                 else -> { /* TODO */ }

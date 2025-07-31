@@ -7,6 +7,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.unicase.features.addaddress.AddAddressScreen
+import com.example.unicase.features.addresslist.AddressListScreen
 import com.example.unicase.features.auth.*
 import com.example.unicase.features.cart.ShoppingCartScreen
 import com.example.unicase.features.checkout.CheckoutScreen
@@ -15,6 +17,7 @@ import com.example.unicase.features.customization.CustomizationViewModel
 import com.example.unicase.features.main.MainScreen
 import com.example.unicase.features.main.PlaceholderScreen
 import com.example.unicase.features.notification.NotificationScreen
+import com.example.unicase.features.payment.PaymentScreen
 import com.example.unicase.features.product.ProductDetailScreen
 import com.example.unicase.features.profile.ProfileScreen
 import com.example.unicase.features.search.SearchScreen
@@ -22,6 +25,8 @@ import com.example.unicase.features.setting.ChangeNameScreen
 import com.example.unicase.features.setting.ChangeProfileScreen
 import com.example.unicase.features.setting.SettingScreen
 import com.example.unicase.features.splash.SplashScreen
+import com.example.unicase.model.AddressListViewModel
+import com.example.unicase.model.TransactionHistoryScreen
 import com.example.unicase.model.dummyProducts
 
 @Composable
@@ -31,6 +36,8 @@ fun AppNavigation() {
     // --- PERUBAHAN PENTING 1 ---
     // Buat ViewModel di sini agar bisa dibagikan ke semua layar di bawahnya.
     val customizationViewModel: CustomizationViewModel = viewModel()
+    val addressListViewModel: AddressListViewModel = viewModel()
+
 
     NavHost(
         navController = navController,
@@ -114,8 +121,32 @@ fun AppNavigation() {
         composable("checkout") {
             CheckoutScreen(
                 navController = navController,
-                customizationViewModel = customizationViewModel
+                customizationViewModel = customizationViewModel,
+                addressListViewModel = addressListViewModel
             )
+        }
+        composable("address_list") {
+            AddressListScreen(
+                addressListViewModel = addressListViewModel,
+                onBackClick = { navController.popBackStack() },
+                onAddAddressClick = { navController.navigate("add_address") },
+                onAddressSelected = { navController.popBackStack() } // kembali ke checkout
+            )
+        }
+
+        composable("add_address") {
+            AddAddressScreen(
+                addressListViewModel = addressListViewModel,
+                onBackClick = { navController.popBackStack() },
+                onAddressSelected = { selectedAddress ->
+                }
+            )
+        }
+        composable("payment") {
+            PaymentScreen(navController)
+        }
+        composable("transactionHistory") {
+            TransactionHistoryScreen(navController)
         }
     }
 }

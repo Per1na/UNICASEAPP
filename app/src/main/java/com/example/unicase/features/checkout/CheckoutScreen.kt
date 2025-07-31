@@ -1,8 +1,9 @@
 package com.example.unicase.features.checkout
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -10,6 +11,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +23,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -34,6 +37,7 @@ import com.example.unicase.features.customization.ImageLayer
 import com.example.unicase.features.customization.TextLayer
 import com.example.unicase.model.globalCartItems
 import com.example.unicase.ui.theme.Poppins
+import com.example.unicase.ui.theme.PrimaryBlue
 import com.example.unicase.ui.theme.UnicaseTheme
 import java.text.NumberFormat
 import java.util.Locale
@@ -47,7 +51,6 @@ private fun formatPrice(price: Int): String {
     format.maximumFractionDigits = 0
     return format.format(price).replace("Rp", "Rp ")
 }
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -106,20 +109,41 @@ fun CheckoutScreen(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Shipping Address", style = MaterialTheme.typography.titleMedium, fontFamily = Poppins, color = Color.Black, fontWeight = FontWeight.Bold)
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clickable { /*TODO: Navigasi ke halaman alamat*/ },
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+            Text("Shipping Address",
+                style = MaterialTheme.typography.titleMedium,
+                fontFamily = Poppins,
+                color = Color.Black,
+                fontWeight = FontWeight.Bold)
+
+            OutlinedButton(
+                onClick = { /* TODO: Navigasi ke halaman daftar alamat */ },
+                shape = RoundedCornerShape(12.dp),
+                modifier = Modifier.fillMaxWidth(),
+                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Gray),
+                border = BorderStroke(1.dp, Color.Black)
             ) {
-                Text("Select address", color = Color.Gray)
-                Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Select Address")
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.LocationOn,
+                        contentDescription = "Address Icon",
+                        tint = PrimaryBlue
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Select address", modifier = Modifier.weight(1f))
+                    Icon(
+                        Icons.AutoMirrored.Filled.KeyboardArrowRight,
+                        contentDescription = "Select Address",
+                        tint = Color.Black
+                    )
+                }
             }
+
             HorizontalDivider()
 
-            Spacer(modifier = Modifier.height(16.dp))
             Text(
                 text = "Order Details",
                 style = MaterialTheme.typography.titleMedium,
@@ -127,113 +151,140 @@ fun CheckoutScreen(
                 color = Color.Black,
                 fontWeight = FontWeight.Bold
             )
-            Spacer(modifier = Modifier.height(8.dp))
-
-            if (hasCustomImage) {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-
-                    // KANVAS DESAIN MINI
-                    Box(
-                        modifier = Modifier
-                            .size(160.dp)
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color.LightGray),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .width(80.dp)
-                                .aspectRatio(10f / 19.5f)
-                                .clipToBounds()
-                                .clip(RoundedCornerShape(8.dp))
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(
+                        border = BorderStroke(1.dp, Color.Black),
+                        shape = RoundedCornerShape(10.dp)
+                    )
+            ) {
+                Column(
+                    modifier = Modifier.padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
+                ) {
+                    if (hasCustomImage) {
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            customCaseLayers.forEach { layer ->
+                            Box(
+                                modifier = Modifier
+                                    .size(80.dp)
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(Color.Gray),
+                                contentAlignment = Alignment.Center
+                            ) {
                                 Box(
                                     modifier = Modifier
-                                        .fillMaxSize()
-                                        .graphicsLayer(
-                                            scaleX = layer.scale.value,
-                                            scaleY = layer.scale.value,
-                                            translationX = layer.offsetX.value / 4,
-                                            translationY = layer.offsetY.value / 4,
-                                            rotationZ = layer.rotation.value
-                                        )
+                                        .fillMaxHeight(0.9f)
+                                        .aspectRatio(10f / 19.5f)
+                                        .clipToBounds()
+                                        .clip(RoundedCornerShape(8.dp))
                                 ) {
-                                    when (layer) {
-                                        is ImageLayer -> {
-                                            AsyncImage(
-                                                model = layer.uri,
-                                                contentDescription = "Image Layer",
-                                                contentScale = ContentScale.Crop,
-                                                modifier = Modifier.fillMaxSize()
-                                            )
-                                        }
-                                        is TextLayer -> {
-                                            Text(
-                                                text = layer.text,
-                                                color = layer.color.value,
-                                                fontSize = 6.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                modifier = Modifier.align(Alignment.Center)
-                                            )
+                                    customCaseLayers.forEach { layer ->
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxSize()
+                                                .graphicsLayer(
+                                                    scaleX = layer.scale.value,
+                                                    scaleY = layer.scale.value,
+                                                    translationX = layer.offsetX.value / 4,
+                                                    translationY = layer.offsetY.value / 4,
+                                                    rotationZ = layer.rotation.value
+                                                )
+                                        ) {
+                                            when (layer) {
+                                                is ImageLayer -> {
+                                                    AsyncImage(
+                                                        model = layer.uri,
+                                                        contentDescription = "Image Layer",
+                                                        contentScale = ContentScale.Crop,
+                                                        modifier = Modifier.fillMaxSize()
+                                                    )
+                                                }
+                                                is TextLayer -> {
+                                                    Text(
+                                                        text = layer.text,
+                                                        color = layer.color.value,
+                                                        fontSize = 3.sp,
+                                                        fontWeight = FontWeight.Bold,
+                                                        modifier = Modifier.align(Alignment.Center)
+                                                    )
+                                                }
+                                            }
                                         }
                                     }
                                 }
+                                Image(
+                                    painter = painterResource(id = R.drawable.case_template),
+                                    contentDescription = "Case Template",
+                                    contentScale = ContentScale.FillBounds,
+                                    modifier = Modifier
+                                        .fillMaxHeight(0.9f)
+                                        .aspectRatio(10f / 19.5f)
+                                        .clip(RoundedCornerShape(4.dp))
+                                )
                             }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Custom Case",
+                                    fontFamily = Poppins,
+                                    color = Color.Black,
+                                    fontWeight = FontWeight.SemiBold,
+                                    fontSize = 16.sp,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis)
+                                Text("Varian: $customCasePhoneType",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = Color.Gray,
+                                    fontSize = 12.sp,
+                                    maxLines = 2,
+                                    overflow = TextOverflow.Ellipsis)
+                            }
+                            Text("${formatPrice(customCasePrice)} x1",
+                                modifier = Modifier.widthIn(max = 80.dp),
+                                fontSize = 12.sp)
                         }
-
-                        Image(
-                            painter = painterResource(id = R.drawable.case_template),
-                            contentDescription = "Case Template",
-                            contentScale = ContentScale.FillBounds,
-                            modifier = Modifier
-                                .width(80.dp)
-                                .aspectRatio(10f / 19.5f)
-                                .clip(RoundedCornerShape(8.dp))
-                        )
                     }
 
-                    Spacer(modifier = Modifier.width(16.dp))
-
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text("Custom Case", fontFamily = Poppins, color = Color.Black, fontWeight = FontWeight.SemiBold)
-                        Text("Varian: $customCasePhoneType", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                    globalCartItems.forEach { cartItem ->
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            if (cartItem.product.imageUri != null) {
+                                AsyncImage(
+                                    model = cartItem.product.imageUri,
+                                    contentDescription = cartItem.product.name,
+                                    modifier = Modifier
+                                        .size(60.dp)
+                                        .clip(RoundedCornerShape(8.dp)),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Image(
+                                    painter = painterResource(id = cartItem.product.imageRes),
+                                    contentDescription = cartItem.product.name,
+                                    modifier = Modifier
+                                        .size(60.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(16.dp))
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text(cartItem.product.name, fontFamily = Poppins, color = Color.Black, fontWeight = FontWeight.SemiBold)
+                                Text("Varian: ${cartItem.product.variant}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+                            }
+                            Text("${cartItem.product.price} x${cartItem.quantity}")
+                        }
                     }
-                    Text("${formatPrice(customCasePrice)} x1")
-                }
-            }
-
-            globalCartItems.forEach { cartItem ->
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    if (cartItem.product.imageUri != null) {
-                        AsyncImage(
-                            model = cartItem.product.imageUri,
-                            contentDescription = cartItem.product.name,
-                            modifier = Modifier
-                                .size(60.dp)
-                                .clip(RoundedCornerShape(8.dp)),
-                            contentScale = ContentScale.Crop
-                        )
-                    } else {
-                        Image(
-                            painter = painterResource(id = cartItem.product.imageRes),
-                            contentDescription = cartItem.product.name,
-                            modifier = Modifier
-                                .size(60.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(16.dp))
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(cartItem.product.name, fontFamily = Poppins, color = Color.Black, fontWeight = FontWeight.SemiBold)
-                        Text("Varian: ${cartItem.product.variant}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                    }
-                    Text("${cartItem.product.price} x${cartItem.quantity}")
                 }
             }
             HorizontalDivider()
 
-            Text("Shipping Option", style = MaterialTheme.typography.titleMedium, fontFamily = Poppins, color = Color.Black, fontWeight = FontWeight.Bold)
+            Text("Shipping Option",
+                style = MaterialTheme.typography.titleMedium,
+                fontFamily = Poppins,
+                color = Color.Black,
+                fontWeight = FontWeight.Bold)
             ExposedDropdownMenuBox(
                 expanded = isShippingExpanded,
                 onExpandedChange = { isShippingExpanded = !isShippingExpanded }
@@ -266,7 +317,7 @@ fun CheckoutScreen(
             Text("Estimated arrival 10 - 17 Jan", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
             HorizontalDivider()
 
-            Text("Payment Method", style = MaterialTheme.typography.titleMedium, fontFamily = Poppins, color = Color.Black, fontWeight = FontWeight.Bold)
+            Text("Manual Payment", style = MaterialTheme.typography.titleMedium, fontFamily = Poppins, color = Color.Black, fontWeight = FontWeight.Bold)
             ExposedDropdownMenuBox(
                 expanded = isPaymentExpanded,
                 onExpandedChange = { isPaymentExpanded = !isPaymentExpanded }

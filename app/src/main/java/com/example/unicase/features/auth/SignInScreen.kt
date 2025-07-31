@@ -1,10 +1,15 @@
 package com.example.unicase.features.auth
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInVertically
+import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.*
@@ -34,6 +39,7 @@ import com.example.unicase.ui.theme.Poppins
 import com.example.unicase.ui.theme.PrimaryBlue
 import com.example.unicase.ui.theme.UnicaseTheme
 import com.example.unicase.viewmodel.AuthViewModel
+import kotlinx.coroutines.delay
 
 @Composable
 fun SignInScreen(navController: NavController, viewModel: AuthViewModel = viewModel()) {
@@ -49,6 +55,8 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel = viewMo
     var loginErrorMessage by remember { mutableStateOf<String?>(null) }
     var loginAttempted by remember { mutableStateOf(false) }
 
+    var showSuccessNotification by remember { mutableStateOf(false) }
+
 
 
     LaunchedEffect(loginState) {
@@ -61,220 +69,279 @@ fun SignInScreen(navController: NavController, viewModel: AuthViewModel = viewMo
                 val prefs = UserPreferences(context)
                 prefs.saveToken(it)
                 prefs.saveName(name ?: "")
-                navController.navigate("main") {
-                    popUpTo("signin") { inclusive = true }
-                }
+            }
+            showSuccessNotification = true
+
+            delay(2500L)
+
+            navController.navigate("main") {
+                popUpTo("signin") { inclusive = true }
             }
         } else if (loginState != null && loginState.isFailure) {
             loginErrorMessage = "Email or password is incorrect"
         }
     }
 
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(horizontal = 32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-
-    )
-
-    {
-        Image(
-            painter = painterResource(id = R.drawable.ic_unicase_logo2),
-            contentDescription = "Unicase Logo",
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
             modifier = Modifier
-                .padding(bottom = 64.dp)
-                .scale(1.5f)
-        )
+                .fillMaxSize()
+                .padding(horizontal = 32.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
 
-
-
-        // Input field untuk Email
-        OutlinedTextField(
-            value = email,
-            onValueChange = {
-                email = it
-                emailError = null
-                loginErrorMessage = null
-
-
-            },
-            label = { Text("Email",
-                fontFamily = Poppins,
-                fontWeight = FontWeight.Normal)
-            },
-            modifier = Modifier
-                .fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp),
-            singleLine = true,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
-            isError = emailError != null,
-            supportingText = {
-                if ( emailError != null) {
-                    Text(emailError!!, color = MaterialTheme.colorScheme.error)
-                }
-            },
-            colors = OutlinedTextFieldDefaults.colors
-                (focusedBorderColor = PrimaryBlue,
-                unfocusedBorderColor = Color.Gray,
-                cursorColor = PrimaryBlue,
-                focusedLabelColor = PrimaryBlue,
-                unfocusedLabelColor = Color.Gray,
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black
-            )
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        // Input field untuk Password
-        OutlinedTextField(
-            value = password,
-            onValueChange = {
-                password = it
-                passwordError = null
-            },
-            label = { Text("Password",
-                fontFamily = Poppins,
-                fontWeight = FontWeight.Normal)
-            },
-            modifier = Modifier
-                .fillMaxWidth(),
-            shape = RoundedCornerShape(14.dp),
-            singleLine = true,
-            visualTransformation =
-                if(passwordVisible) VisualTransformation.None
-                else PasswordVisualTransformation(),
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-            trailingIcon = {
-                val image = if (passwordVisible)
-                    Icons.Filled.Visibility
-                else Icons.Filled.VisibilityOff
-
-                val description = if (passwordVisible) "Hide password" else "Show password"
-
-                IconButton(onClick = { passwordVisible = !passwordVisible}) {
-                    Icon(imageVector = image, description, tint = PrimaryBlue)
-                }
-            },
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = PrimaryBlue,
-                unfocusedBorderColor = Color.Gray,
-                cursorColor = PrimaryBlue,
-                focusedLabelColor = PrimaryBlue,
-                unfocusedLabelColor = Color.Gray,
-                focusedTextColor = Color.Black,
-                unfocusedTextColor = Color.Black
-            ),
-            isError = passwordError != null,
-            supportingText = {
-                if (passwordError != null) {
-                    Text(passwordError!!, color = MaterialTheme.colorScheme.error)
-                }
-            }
-        )
-        if (loginErrorMessage != null) {
-            Text(
-                text = loginErrorMessage!!,
-                color = MaterialTheme.colorScheme.error,
-                fontSize = 14.sp,
-                modifier = Modifier
-                    .align(Alignment.Start)
-                    .padding(bottom = 8.dp)
-            )
-        }
-
-
-
-        // Tombol Lupa Password
-        TextButton(
-            onClick = {
-                navController.navigate("forgot_password")
-            },
-            modifier = Modifier.align(Alignment.End)
-        ) {
-            Text(text = "Forgot Password?", fontFamily = Poppins, fontWeight = FontWeight.SemiBold, color = PrimaryBlue)
-        }
-
-        Spacer(modifier = Modifier.height(32.dp))
-
-        // Tombol Sign In
-        Button(
-            onClick = {
-                emailError = null
-                passwordError = null
-                var formIsValid = true
-
-                if (email.isBlank()) {
-                    emailError = "Email cannot be empty"
-                    formIsValid = false
-                } else if (!email.endsWith("@gmail.com", ignoreCase = true)) {
-                    emailError = "Invalid email format"
-                    formIsValid = false
-                }
-
-                if (password.isBlank()) {
-                    passwordError = "Password cannot be empty"
-                    formIsValid = false
-                }
-
-                else if (password.length < 8) {
-                    passwordError = "Password must be at least 8 characters"
-                    formIsValid = false
-                } else {
-                    val containLetter = password.any { it.isLetter() }
-                    val containNumber = password.any { it.isDigit() }
-                    val containSymbol = password.any { !it.isLetterOrDigit() }
-
-                    if (!containLetter || !containNumber || !containSymbol) {
-                        passwordError = "Password must contain at least letter, number, and symbol"
-                        formIsValid = false
-                    }
-                }
-
-                if (formIsValid) {
-                    loginAttempted = true
-                    loginErrorMessage = null
-                    viewModel.login(email, password)
-                }
-            },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
         )
 
         {
-            Text(text = "Sign In",
-                fontFamily = Poppins,
-                fontWeight = FontWeight.SemiBold,
-                color = Color.White)
-        }
+            Image(
+                painter = painterResource(id = R.drawable.ic_unicase_logo2),
+                contentDescription = "Unicase Logo",
+                modifier = Modifier
+                    .padding(bottom = 64.dp)
+                    .scale(1.5f)
+            )
 
-        // Tautan ke halaman Sign Up
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 48.dp),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(text = "Don't have an account?",
-                fontFamily = Poppins,
-                fontWeight = FontWeight.Normal,
-                color = Color.Gray)
-            TextButton(onClick = { navController.navigate("signup") }) {
-                Text(text = "Sign Up",
-                    fontFamily = Poppins,
-                    fontWeight = FontWeight.SemiBold,
-                    color = PrimaryBlue,
-                    fontSize = 16.sp)
+
+            // Input field untuk Email
+            OutlinedTextField(
+                value = email,
+                onValueChange = {
+                    email = it
+                    emailError = null
+                    loginErrorMessage = null
+
+
+                },
+                label = {
+                    Text(
+                        "Email",
+                        fontFamily = Poppins,
+                        fontWeight = FontWeight.Normal
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                singleLine = true,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
+                isError = emailError != null,
+                supportingText = {
+                    if (emailError != null) {
+                        Text(emailError!!, color = MaterialTheme.colorScheme.error)
+                    }
+                },
+                colors = OutlinedTextFieldDefaults.colors
+                    (
+                    focusedBorderColor = PrimaryBlue,
+                    unfocusedBorderColor = Color.Gray,
+                    cursorColor = PrimaryBlue,
+                    focusedLabelColor = PrimaryBlue,
+                    unfocusedLabelColor = Color.Gray,
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black
+                )
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Input field untuk Password
+            OutlinedTextField(
+                value = password,
+                onValueChange = {
+                    password = it
+                    passwordError = null
+                },
+                label = {
+                    Text(
+                        "Password",
+                        fontFamily = Poppins,
+                        fontWeight = FontWeight.Normal
+                    )
+                },
+                modifier = Modifier
+                    .fillMaxWidth(),
+                shape = RoundedCornerShape(14.dp),
+                singleLine = true,
+                visualTransformation =
+                    if (passwordVisible) VisualTransformation.None
+                    else PasswordVisualTransformation(),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                trailingIcon = {
+                    val image = if (passwordVisible)
+                        Icons.Filled.Visibility
+                    else Icons.Filled.VisibilityOff
+
+                    val description = if (passwordVisible) "Hide password" else "Show password"
+
+                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                        Icon(imageVector = image, description, tint = PrimaryBlue)
+                    }
+                },
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = PrimaryBlue,
+                    unfocusedBorderColor = Color.Gray,
+                    cursorColor = PrimaryBlue,
+                    focusedLabelColor = PrimaryBlue,
+                    unfocusedLabelColor = Color.Gray,
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black
+                ),
+                isError = passwordError != null,
+                supportingText = {
+                    if (passwordError != null) {
+                        Text(passwordError!!, color = MaterialTheme.colorScheme.error)
+                    }
+                }
+            )
+            if (loginErrorMessage != null) {
+                Text(
+                    text = loginErrorMessage!!,
+                    color = MaterialTheme.colorScheme.error,
+                    fontSize = 14.sp,
+                    modifier = Modifier
+                        .align(Alignment.Start)
+                        .padding(bottom = 8.dp)
+                )
             }
 
+
+            // Tombol Lupa Password
+            TextButton(
+                onClick = {
+                    navController.navigate("forgot_password")
+                },
+                modifier = Modifier.align(Alignment.End)
+            ) {
+                Text(
+                    text = "Forgot Password?",
+                    fontFamily = Poppins,
+                    fontWeight = FontWeight.SemiBold,
+                    color = PrimaryBlue
+                )
+            }
+
+            Spacer(modifier = Modifier.height(32.dp))
+
+            // Tombol Sign In
+            Button(
+                onClick = {
+                    emailError = null
+                    passwordError = null
+                    var formIsValid = true
+
+                    if (email.isBlank()) {
+                        emailError = "Email cannot be empty"
+                        formIsValid = false
+                    } else if (!email.endsWith("@gmail.com", ignoreCase = true)) {
+                        emailError = "Invalid email format"
+                        formIsValid = false
+                    }
+
+                    if (password.isBlank()) {
+                        passwordError = "Password cannot be empty"
+                        formIsValid = false
+                    } else if (password.length < 8) {
+                        passwordError = "Password must be at least 8 characters"
+                        formIsValid = false
+                    } else {
+                        val containLetter = password.any { it.isLetter() }
+                        val containNumber = password.any { it.isDigit() }
+                        val containSymbol = password.any { !it.isLetterOrDigit() }
+
+                        if (!containLetter || !containNumber || !containSymbol) {
+                            passwordError =
+                                "Password must contain at least letter, number, and symbol"
+                            formIsValid = false
+                        }
+                    }
+
+                    if (formIsValid) {
+                        loginAttempted = true
+                        loginErrorMessage = null
+                        viewModel.login(email, password)
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+            )
+
+            {
+                Text(
+                    text = "Sign In",
+                    fontFamily = Poppins,
+                    fontWeight = FontWeight.SemiBold,
+                    color = Color.White
+                )
+            }
+
+            // Tautan ke halaman Sign Up
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 48.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Don't have an account?",
+                    fontFamily = Poppins,
+                    fontWeight = FontWeight.Normal,
+                    color = Color.Gray
+                )
+                TextButton(onClick = { navController.navigate("signup") }) {
+                    Text(
+                        text = "Sign Up",
+                        fontFamily = Poppins,
+                        fontWeight = FontWeight.SemiBold,
+                        color = PrimaryBlue,
+                        fontSize = 16.sp
+                    )
+                }
+
+            }
+        }
+        AnimatedVisibility(
+            visible = showSuccessNotification,
+            enter = slideInVertically(animationSpec = tween(500)) { -it },
+            exit = slideOutVertically(animationSpec = tween(500)) { -it },
+            modifier = Modifier.align(Alignment.TopCenter)
+        ) {
+
+            LoginSuccessBanner()
         }
     }
 }
+
+@Composable
+fun LoginSuccessBanner() {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 16.dp, start = 16.dp, end = 16.dp),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFFE8F5E9)),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                imageVector = Icons.Default.CheckCircle,
+                contentDescription = "Success",
+                tint = Color(0xFF4CAF50)
+            )
+            Spacer(modifier = Modifier.width(12.dp))
+            Text(
+                text = "Login Successful!",
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF2E7D32)
+            )
+        }
+    }
+}
+
 
 
 

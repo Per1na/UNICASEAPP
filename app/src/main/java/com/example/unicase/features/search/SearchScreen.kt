@@ -118,7 +118,10 @@ fun SearchScreen(navController: NavController) {
                 IconButton(onClick = {
                     navController.navigate("cart")
                 }) {
-                    Icon(Icons.Default.ShoppingCart, contentDescription = "Cart", tint = PrimaryBlue)
+                    Icon(
+                        Icons.Default.ShoppingCart,
+                        contentDescription = "Cart",
+                        tint = PrimaryBlue)
                 }
 
                 IconButton(onClick = {

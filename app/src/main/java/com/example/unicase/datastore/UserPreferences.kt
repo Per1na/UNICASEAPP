@@ -1,6 +1,7 @@
 package com.example.unicase.datastore
 
 import android.content.Context
+import androidx.datastore.dataStore
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
@@ -49,4 +50,5 @@ class UserPreferences(private val context: Context) {
             prefs.remove(NAME_KEY)
         }
     }
+
 }

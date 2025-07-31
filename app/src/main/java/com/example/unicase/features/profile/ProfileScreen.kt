@@ -37,6 +37,9 @@ import com.example.unicase.ui.theme.UnicaseTheme
 import kotlinx.coroutines.launch
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 
 
 data class ProfileMenuItemData(
@@ -45,12 +48,15 @@ data class ProfileMenuItemData(
     val isLogout: Boolean = false
 )
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ProfileScreen(navController: NavController) {
     val context = LocalContext.current
     val name by UserPreferences(context).getName().collectAsState(initial = "")
     Log.d("PROFILE", "Nama yang dibaca: $name")
+    val coroutineScope = rememberCoroutineScope()
+    var showLogoutDialog by remember { mutableStateOf(false) }
 
 
 
@@ -67,6 +73,7 @@ fun ProfileScreen(navController: NavController) {
         ProfileMenuItemData(R.drawable.ic_costumer_service, "Chat Admin"),
         ProfileMenuItemData(R.drawable.ic_log_out, "Log Out", isLogout = true)
     )
+
 
 
     Scaffold(
@@ -86,7 +93,11 @@ fun ProfileScreen(navController: NavController) {
                 .fillMaxSize()
                 .padding(innerPadding),
             horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+        )
+
+
+
+        {
             // Header sebagai item pertama
             item {
                 Spacer(modifier = Modifier.height(24.dp))
@@ -108,12 +119,45 @@ fun ProfileScreen(navController: NavController) {
                         text = item.text,
                         isLogout = item.isLogout,
                         navController = navController,
-                        context = context
+                        context = context,
+                        onLogoutClick = {showLogoutDialog = true}
                     )
                 }
             }
         }
     }
+    if (showLogoutDialog) {
+        AlertDialog(
+            onDismissRequest = { showLogoutDialog = false },
+            title = { Text("Are you sure you want to log out?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showLogoutDialog = false
+                        coroutineScope.launch {
+                            UserPreferences(context).clearToken()
+                            navController.navigate("signin") {
+                                popUpTo("main") { inclusive = true }
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = PrimaryBlue)
+                ) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                Button(
+                    onClick = { showLogoutDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White)
+                ) {
+                    Text("No", color = PrimaryBlue)
+
+                }
+            }
+        )
+    }
+
 }
 
 @Composable
@@ -156,27 +200,24 @@ fun ProfileHeader(name: String) {
 
 // --- FUNGSI YANG DIPERBAIKI ---
 @Composable
-fun ProfileMenuItem(@DrawableRes
-                    iconRes: Int,
-                    text: String,
-                    isLogout: Boolean = false,
-                    navController: NavController,
-                    context: android.content.Context) {
-
-    val coroutineScope = rememberCoroutineScope()
+fun ProfileMenuItem(
+    @DrawableRes iconRes: Int,
+    text: String,
+    isLogout: Boolean = false,
+    navController: NavController,
+    context: Context,
+    onLogoutClick: () -> Unit
+) {
     Row(
-        modifier = Modifier.fillMaxWidth().clickable {
-            if (isLogout) {
-                coroutineScope.launch {
-                    UserPreferences(context).clearToken()
-                    navController.navigate("signin") {
-                        popUpTo("main") { inclusive = true } // agar tidak bisa kembali pakai back
-                    }
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable {
+                if (isLogout) {
+                    onLogoutClick()
+                } else {
+                    // Aksi lain bisa ditambahkan di sini
                 }
-            } else {
-                // TODO: Aksi lainnya (misalnya navigasi ke halaman setting, shipped, dll)
             }
-        }
             .padding(vertical = 16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -192,9 +233,9 @@ fun ProfileMenuItem(@DrawableRes
             fontWeight = FontWeight.SemiBold,
             color = if (isLogout) Color.Red else Color.Black
         )
-
     }
 }
+
 
 // ------------------------------
 

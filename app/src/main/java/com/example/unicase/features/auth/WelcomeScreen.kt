@@ -133,7 +133,7 @@ fun WelcomeScreen(navController: NavController) {
             modifier = Modifier.padding(bottom = 32.dp)
         ) {
             Button(
-                onClick = { navController.navigate("signin") },
+                onClick = { navController.navigate("Let Get Started") },
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(50.dp),

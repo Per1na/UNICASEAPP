@@ -8,14 +8,22 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.unicase.features.Preview.HomeScreenPreview
+import com.example.unicase.features.Preview.ProductDetailScreenPreview
+import com.example.unicase.features.Preview.ProfilePreviewScreen
+import com.example.unicase.features.Preview.SearchPreview
 import com.example.unicase.features.auth.*
 import com.example.unicase.features.cart.ShoppingCartScreen
+import com.example.unicase.features.checkout.CheckoutScreen
+import com.example.unicase.features.customization.CustomCaseScreen
 import com.example.unicase.features.main.MainScreen
 import com.example.unicase.features.main.PlaceholderScreen
 import com.example.unicase.features.notification.NotificationScreen
 import com.example.unicase.features.product.ProductDetailScreen
 import com.example.unicase.features.profile.ProfileScreen
+import com.example.unicase.features.profile.ProfileScreenPreview
 import com.example.unicase.features.search.SearchScreen
+import com.example.unicase.features.search.SearchScreenPreview
 import com.example.unicase.features.splash.SplashScreen
 
 
@@ -71,6 +79,32 @@ fun AppNavigation() {
         }
         composable("profile") {
             ProfileScreen(navController = navController)
+        }
+
+        composable("custom_case") {
+            CustomCaseScreen(navController = navController)
+        }
+        composable("checkout") {
+            CheckoutScreen(navController = navController)
+        }
+        composable("Buy") {
+            CheckoutScreen(navController = navController)
+        }
+
+        composable("Let Get Started") {
+            HomeScreenPreview(navController = navController)
+        }
+
+        composable("ProfilePreview") {
+            ProfilePreviewScreen(navController = navController)
+        }
+
+        composable("PreviewSearch") {
+            SearchPreview(navController = navController)
+        }
+
+        composable("ProductPreview") {
+            ProductDetailScreenPreview(productId = 1, navController = navController)
         }
 
         composable(

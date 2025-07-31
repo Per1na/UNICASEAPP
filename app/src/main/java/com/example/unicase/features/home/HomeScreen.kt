@@ -57,7 +57,7 @@ fun HomeScreen(navController: NavController) {
         item(span = { GridItemSpan(maxLineSpan) }) {
             Column {
                 HomeTopBar(navController)
-                CustomBanner()
+                CustomBanner(navController)
                 CategorySection()
             }
         }
@@ -115,11 +115,13 @@ fun HomeTopBar(navController: NavController) {
 }
 
 @Composable
-fun CustomBanner() {
+fun CustomBanner(navController: NavController) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .height(150.dp),
+            .height(150.dp)
+            .clickable { navController.navigate("custom_case") },
+
         shape = RoundedCornerShape(24.dp),
         colors = CardDefaults.cardColors(containerColor = PrimaryBlue)
     ) {

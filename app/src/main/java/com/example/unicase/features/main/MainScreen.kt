@@ -27,6 +27,7 @@ import com.example.unicase.features.product.ProductDetailScreen
 import com.example.unicase.ui.theme.PrimaryBlue
 import com.example.unicase.ui.theme.TertiaryWhite
 import com.example.unicase.ui.theme.UnicaseTheme
+import dagger.hilt.android.AndroidEntryPoint
 
 data class BottomNavItem(
     val label: String,

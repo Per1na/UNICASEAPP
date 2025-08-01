@@ -55,7 +55,7 @@ fun SplashScreen(navController: NavController) {
         Image(
             painter = painterResource(id = R.drawable.ic_unicase_logo),
             contentDescription = "Unicase Logo",
-            modifier = Modifier.fillMaxSize(0.80f) // Mengurangi ukuran logo
+            modifier = Modifier.fillMaxSize(0.70f) // Mengurangi ukuran logo
 
         )
     }

@@ -24,6 +24,8 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.unicase.features.home.HomeScreen
 import com.example.unicase.features.product.ProductDetailScreen
+import com.example.unicase.features.transaction.TransactionHistoryScreen
+import com.example.unicase.features.wishlist.WishlistScreen
 import com.example.unicase.ui.theme.PrimaryBlue
 import com.example.unicase.ui.theme.TertiaryWhite
 import com.example.unicase.ui.theme.UnicaseTheme
@@ -112,8 +114,8 @@ fun AppNavHost(
             HomeScreen(navController = mainNavController)
         }
         composable("chat") { PlaceholderScreen("Chat Screen") }
-        composable("wishlist") { PlaceholderScreen("Wishlist Screen") }
-        composable("history") { PlaceholderScreen("History Screen") }
+        composable("wishlist") { WishlistScreen(navController = mainNavController) }
+        composable("history") { TransactionHistoryScreen(navController = mainNavController) }
     }
 }
 

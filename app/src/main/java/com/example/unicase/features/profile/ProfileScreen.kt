@@ -95,8 +95,6 @@ fun ProfileScreen(navController: NavController) {
             horizontalAlignment = Alignment.CenterHorizontally
         )
 
-
-
         {
             // Header sebagai item pertama
             item {
@@ -124,6 +122,8 @@ fun ProfileScreen(navController: NavController) {
                     )
                 }
             }
+
+
         }
     }
     if (showLogoutDialog) {
@@ -212,10 +212,9 @@ fun ProfileMenuItem(
         modifier = Modifier
             .fillMaxWidth()
             .clickable {
-                if (isLogout) {
-                    onLogoutClick()
-                } else {
-                    // Aksi lain bisa ditambahkan di sini
+                when {
+                    isLogout -> onLogoutClick()
+                    text == "Setting" -> navController.navigate("setting")
                 }
             }
             .padding(vertical = 16.dp),

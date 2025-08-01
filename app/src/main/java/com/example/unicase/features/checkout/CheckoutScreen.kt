@@ -1,6 +1,6 @@
-package com.example.unicase.features.checkout
+package com.example.unicase.features.customization // Pastikan package sesuai
 
-import androidx.compose.foundation.BorderStroke
+import android.net.Uri
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -10,10 +10,12 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.filled.CreditCard
 import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.LocalShipping
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -23,72 +25,40 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.unicase.R
-import com.example.unicase.features.customization.CustomizationViewModel
-import com.example.unicase.features.customization.ImageLayer
-import com.example.unicase.features.customization.TextLayer
-import com.example.unicase.model.AddressListViewModel
-import com.example.unicase.model.globalCartItems
-import com.example.unicase.ui.theme.Poppins
 import com.example.unicase.ui.theme.PrimaryBlue
 import com.example.unicase.ui.theme.UnicaseTheme
-import java.text.NumberFormat
-import java.util.*
-
-private fun parsePrice(priceString: String): Int {
-    return priceString.replace(Regex("[^\\d]"), "").toIntOrNull() ?: 0
-}
-
-private fun formatPrice(price: Int): String {
-    val format = NumberFormat.getCurrencyInstance(Locale("in", "ID"))
-    format.maximumFractionDigits = 0
-    return format.format(price).replace("Rp", "Rp ")
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CheckoutScreen(
     navController: NavController,
-    customizationViewModel: CustomizationViewModel = viewModel(),
-    addressListViewModel: AddressListViewModel = viewModel()
+    customizationViewModel: CustomizationViewModel
 ) {
-    val selectedAddress by addressListViewModel.selectedAddress.collectAsState()
-    val customCaseLayers = customizationViewModel.layers.value
-    val customCasePrice = customizationViewModel.price.value
-    val customCasePhoneType = customizationViewModel.phoneType.value
-    val hasCustomImage = customCaseLayers.any { it is ImageLayer }
+    // Mengambil semua data dari satu ViewModel bersama
+    val layers by customizationViewModel.layers
+    val caseType by customizationViewModel.caseType
+    val printEffect by customizationViewModel.printEffect
+    val phoneBrand by customizationViewModel.phoneBrand
+    val phoneType by customizationViewModel.phoneType
+    val productPrice by customizationViewModel.price
+    val selectedAddress by customizationViewModel.selectedAddress
 
-    val shippingOptions = mapOf("Regular" to 20000, "Express" to 40000)
-    var selectedShippingLabel by remember { mutableStateOf("Regular") }
-    var isShippingExpanded by remember { mutableStateOf(false) }
 
-    data class PaymentOption(val label: String, val iconRes: Int)
-
-    val paymentOptions = listOf(
-        PaymentOption("BCA Virtual Account", R.drawable.bca_logo)
-    )
-    var selectedPayment by remember { mutableStateOf(paymentOptions.first()) }
-    var isPaymentExpanded by remember { mutableStateOf(false) }
-
-    val itemsSubtotal = globalCartItems.sumOf { parsePrice(it.product.price) * it.quantity }
-    val customCaseSubtotal = if (hasCustomImage) customCasePrice else 0
-    val subtotal = itemsSubtotal + customCaseSubtotal
-    val shippingFee = shippingOptions[selectedShippingLabel] ?: 0
+    // Contoh biaya tambahan
+    val shippingCost = 12000
     val serviceFee = 1000
-    val appServiceFee = 1000
-    val totalPurchase = subtotal + shippingFee + serviceFee + appServiceFee
+    val totalPrice = productPrice + shippingCost + serviceFee
 
     Scaffold(
         topBar = {
-            CenterAlignedTopAppBar(
+            TopAppBar(
                 title = { Text("Checkout", fontWeight = FontWeight.Bold) },
                 navigationIcon = {
                     IconButton(onClick = { navController.popBackStack() }) {
@@ -98,15 +68,31 @@ fun CheckoutScreen(
             )
         },
         bottomBar = {
-            Button(
-                onClick = {
-                    navController.navigate("payment") // INGAT UBAH
-                },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shadowElevation = 8.dp
             ) {
-                Text("Pay Now")
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Column {
+                        Text("Total Payment", style = MaterialTheme.typography.bodyMedium, color = Color.Black)
+                        Text(
+                            "Rp${String.format("%,d", totalPrice)}",
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = PrimaryBlue
+                        )
+                    }
+                    Button(onClick = { navController.navigate("payment/$totalPrice")
+                    }) {
+                        Text("Pay Now")
+                    }
+                }
             }
         }
     ) { innerPadding ->
@@ -114,296 +100,241 @@ fun CheckoutScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                .padding(16.dp)
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text("Shipping Address",
-                style = MaterialTheme.typography.titleMedium,
-                fontFamily = Poppins,
-                color = Color.Black,
-                fontWeight = FontWeight.Bold
-            )
+            Text("Order Summary", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = Color.Black)
 
-            if (selectedAddress != null) {
-                OutlinedCard(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    border = BorderStroke(1.dp, Color.Black),
-                    colors = CardDefaults.outlinedCardColors(containerColor = Color.White)
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        Text(
-                            selectedAddress!!.recipientName,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 16.sp,
-                            color = Color.Black
-                        )
-                        Text(
-                            selectedAddress!!.phone,
-                            fontSize = 14.sp,
-                            color = Color.Gray
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            "${selectedAddress!!.streetAddress}, ${selectedAddress!!.district}, ${selectedAddress!!.city}, ${selectedAddress!!.province}, ${selectedAddress!!.postalCode}",
-                            fontSize = 14.sp,
-                            color = Color.Gray
-                        )
+            // 1. Ringkasan Pesanan
+            ElevatedCard(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.tertiary)
+            ) {
+                Row(modifier = Modifier.padding(16.dp)) {
+                    CasePreview(layers = layers)
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Custom Phone Case", fontWeight = FontWeight.Bold, color = Color.Black)
+                        Text("$phoneBrand $phoneType", style = MaterialTheme.typography.bodyMedium, color = Color.Black)
+                        Text("Case: $caseType", style = MaterialTheme.typography.bodyMedium, color = Color.Black)
+                        Text("Effect: $printEffect", style = MaterialTheme.typography.bodyMedium, color = Color.Black)
                     }
                 }
-            } else {
-                Text("No address selected")
             }
 
-            OutlinedButton(
-                onClick = { navController.navigate("address_list") },
-                shape = RoundedCornerShape(12.dp),
+            // 2. Bagian Alamat Pengiriman
+            ElevatedCard (
                 modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 12.dp),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = Color.Gray),
-                border = BorderStroke(1.dp, Color.Black)
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.tertiary
+                )
             ) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier.padding(16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Icon(Icons.Default.LocationOn, contentDescription = "Address Icon", tint = PrimaryBlue)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Select Address", modifier = Modifier.weight(1f))
-                    Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, contentDescription = "Select Address", tint = Color.Black)
+                    Icon(imageVector = Icons.Default.LocationOn, contentDescription = "Address", modifier = Modifier.size(24.dp), tint = PrimaryBlue)
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Shipping Address", fontWeight = FontWeight.SemiBold, color = Color.Black)
+                        if (selectedAddress != null) {
+                            Text(
+                                "${selectedAddress!!.recipientName} (${selectedAddress!!.label})",
+                                style = MaterialTheme.typography.bodyMedium,
+                                fontWeight = FontWeight.Medium
+                            )
+                            Text(
+                                selectedAddress!!.fullAddress,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.Gray,
+                                maxLines = 2
+                            )
+                        } else {
+                            Text(
+                                "You haven't added an address yet.",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.Gray
+                            )
+                        }
+                    }
+                    OutlinedButton(onClick = { navController.navigate("address_list") }) {
+                        Text(if (selectedAddress != null) "Change" else "Add")
+                    }
                 }
             }
 
-            HorizontalDivider()
-
-            Text("Order Details",
-                style = MaterialTheme.typography.titleMedium,
-                fontFamily = Poppins,
-                color = Color.Black,
-                fontWeight = FontWeight.Bold
+            // 3. Opsi Pengiriman
+            OptionCard(
+                icon = Icons.Default.LocalShipping,
+                title = "Shipping Options",
+                subtitle = "Reguler (2-3 Day)",
+                price = shippingCost
             )
 
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .border(BorderStroke(1.dp, Color.Black), RoundedCornerShape(10.dp))
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    if (hasCustomImage) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(80.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(Color.Gray),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxHeight(0.9f)
-                                        .aspectRatio(10f / 19.5f)
-                                        .clipToBounds()
-                                        .clip(RoundedCornerShape(8.dp))
-                                ) {
-                                    customCaseLayers.forEach { layer ->
-                                        Box(
-                                            modifier = Modifier
-                                                .fillMaxSize()
-                                                .graphicsLayer(
-                                                    scaleX = layer.scale.value,
-                                                    scaleY = layer.scale.value,
-                                                    translationX = layer.offsetX.value / 4,
-                                                    translationY = layer.offsetY.value / 4,
-                                                    rotationZ = layer.rotation.value
-                                                )
-                                        ) {
-                                            when (layer) {
-                                                is ImageLayer -> {
-                                                    AsyncImage(
-                                                        model = layer.uri,
-                                                        contentDescription = "Image Layer",
-                                                        contentScale = ContentScale.Crop,
-                                                        modifier = Modifier.fillMaxSize()
-                                                    )
-                                                }
-                                                is TextLayer -> {
-                                                    Text(
-                                                        text = layer.text,
-                                                        color = layer.color.value,
-                                                        fontSize = 3.sp,
-                                                        fontWeight = FontWeight.Bold,
-                                                        modifier = Modifier.align(Alignment.Center)
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                Image(
-                                    painter = painterResource(id = R.drawable.case_template),
-                                    contentDescription = "Case Template",
-                                    contentScale = ContentScale.FillBounds,
-                                    modifier = Modifier
-                                        .fillMaxHeight(0.9f)
-                                        .aspectRatio(10f / 19.5f)
-                                        .clip(RoundedCornerShape(4.dp))
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("Custom Case", fontFamily = Poppins, color = Color.Black, fontWeight = FontWeight.SemiBold)
-                                Text("Varian: $customCasePhoneType", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                            }
-                            Text("${formatPrice(customCasePrice)} x1", modifier = Modifier.widthIn(max = 80.dp), fontSize = 12.sp)
-                        }
-                    }
+            // 4. Metode Pembayaran
+            OptionCard(
+                icon = Icons.Default.CreditCard,
+                title = "Manual Payment",
+                subtitle = "Bank BRI",
+                price = null
+            )
 
-                    globalCartItems.forEach { cartItem ->
-                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            val image = cartItem.product.imageUri
-                            if (image != null) {
-                                AsyncImage(
-                                    model = image,
-                                    contentDescription = cartItem.product.name,
-                                    modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp)),
-                                    contentScale = ContentScale.Crop
-                                )
-                            } else {
-                                Image(
-                                    painter = painterResource(id = cartItem.product.imageRes),
-                                    contentDescription = cartItem.product.name,
-                                    modifier = Modifier.size(60.dp).clip(RoundedCornerShape(8.dp))
-                                )
-                            }
-                            Spacer(modifier = Modifier.width(16.dp))
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text(cartItem.product.name, fontFamily = Poppins, color = Color.Black, fontWeight = FontWeight.SemiBold)
-                                Text("Varian: ${cartItem.product.variant}", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-                            }
-                            Text("${cartItem.product.price} x${cartItem.quantity}")
-                        }
-                    }
-                }
-            }
-
-            HorizontalDivider()
-
-            Text("Shipping Option", style = MaterialTheme.typography.titleMedium, fontFamily = Poppins, fontWeight = FontWeight.Bold, color = Color.Black)
-            ExposedDropdownMenuBox(
-                expanded = isShippingExpanded,
-                onExpandedChange = { isShippingExpanded = !isShippingExpanded }
-            ) {
-                OutlinedTextField(
-                    value = "$selectedShippingLabel (${formatPrice(shippingFee)})",
-                    onValueChange = {},
-                    readOnly = true,
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isShippingExpanded) },
-                    modifier = Modifier.menuAnchor().fillMaxWidth()
-                )
-                ExposedDropdownMenu(
-                    expanded = isShippingExpanded,
-                    onDismissRequest = { isShippingExpanded = false }
-                ) {
-                    shippingOptions.forEach { (label, price) ->
-                        DropdownMenuItem(
-                            text = { Text("$label (${formatPrice(price)})") },
-                            onClick = {
-                                selectedShippingLabel = label
-                                isShippingExpanded = false
-                            }
-                        )
-                    }
-                }
-            }
-
-            Text("Estimated arrival 10 - 17 Jan", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
-            HorizontalDivider()
-
-            Text("Manual Payment", style = MaterialTheme.typography.titleMedium, fontFamily = Poppins, fontWeight = FontWeight.Bold, color = Color.Black)
-            ExposedDropdownMenuBox(
-                expanded = isPaymentExpanded,
-                onExpandedChange = { isPaymentExpanded = !isPaymentExpanded }
-            ) {
-                OutlinedTextField(
-                    value = selectedPayment.label,
-                    onValueChange = {},
-                    readOnly = true,
-                    shape = RoundedCornerShape(12.dp),
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = isPaymentExpanded) },
-                    modifier = Modifier
-                        .menuAnchor()
-                        .fillMaxWidth(),
-                    leadingIcon = {
-                        Image(
-                            painter = painterResource(id = selectedPayment.iconRes),
-                            contentDescription = "Payment Logo",
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-                )
-
-                ExposedDropdownMenu(
-                    expanded = isPaymentExpanded,
-                    onDismissRequest = { isPaymentExpanded = false }
-                ) {
-                    paymentOptions.forEach { option ->
-                        DropdownMenuItem(
-                            text = {
-                                Row(verticalAlignment = Alignment.CenterVertically) {
-                                    Image(
-                                        painter = painterResource(id = option.iconRes),
-                                        contentDescription = null,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(option.label)
-                                }
-                            },
-                            onClick = {
-                                selectedPayment = option
-                                isPaymentExpanded = false
-                            }
-                        )
-                    }
-                }
-            }
-
-
-            HorizontalDivider()
-
-            PriceRow(label = "Subtotal", price = formatPrice(subtotal))
-            PriceRow(label = "Shipping Fee", price = formatPrice(shippingFee))
-            PriceRow(label = "Service fee", price = formatPrice(serviceFee))
-            PriceRow(label = "Application Service fee", price = formatPrice(appServiceFee))
-            HorizontalDivider()
-            PriceRow(label = "Total Purchase", price = formatPrice(totalPurchase), isTotal = true)
+            // 5. Rincian Harga
+            PriceDetails(productPrice, shippingCost, serviceFee, totalPrice)
         }
     }
 }
 
 @Composable
-fun PriceRow(label: String, price: String, isTotal: Boolean = false) {
+private fun CasePreview(layers: List<DesignLayer>) {
+    Box(
+        modifier = Modifier
+            .width(80.dp)
+            .aspectRatio(10f / 19.5f)
+            .clipToBounds()
+            .clip(RoundedCornerShape(12.dp))
+            .background(Color.LightGray),
+        contentAlignment = Alignment.Center
+    ) {
+        layers.forEach { layer ->
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .graphicsLayer(
+                        scaleX = layer.scale.value,
+                        scaleY = layer.scale.value,
+                        translationX = layer.offsetX.value,
+                        translationY = layer.offsetY.value,
+                        rotationZ = layer.rotation.value
+                    )
+            ) {
+                when (layer) {
+                    is ImageLayer -> {
+                        AsyncImage(
+                            model = layer.uri,
+                            contentDescription = null,
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+                    is TextLayer -> {
+                        Text(
+                            text = layer.text,
+                            color = layer.color.value,
+                            fontSize = 8.sp,
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.align(Alignment.Center)
+                        )
+                    }
+                }
+            }
+        }
+        Image(
+            painter = painterResource(id = R.drawable.case_template),
+            contentDescription = null,
+            contentScale = ContentScale.FillBounds,
+            modifier = Modifier.fillMaxSize()
+        )
+    }
+}
+
+@Composable
+private fun OptionCard(icon: androidx.compose.ui.graphics.vector.ImageVector, title: String, subtitle: String, price: Int?) {
+    ElevatedCard(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.tertiary)
+    ) {
+        Row(
+            modifier = Modifier.padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(imageVector = icon, contentDescription = title, modifier = Modifier.size(24.dp), tint = PrimaryBlue)
+            Spacer(modifier = Modifier.width(16.dp))
+            Column(modifier = Modifier.weight(1f)) {
+                Text(title, fontWeight = FontWeight.SemiBold, color = Color.Black)
+                Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = Color.Black)
+            }
+            price?.let {
+                Text("Rp${String.format("%,d", it)}", fontWeight = FontWeight.Medium)
+            }
+        }
+    }
+}
+
+@Composable
+private fun PriceDetails(productPrice: Int, shippingCost: Int, serviceFee: Int, totalPrice: Int) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, Color.LightGray, RoundedCornerShape(12.dp))
+            .padding(16.dp),
+        verticalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Text("Price Details", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = Color.Black)
+        PriceRow(label = "Product Price", price = productPrice)
+        PriceRow(label = "Shipping Costs", price = shippingCost)
+        PriceRow(label = "Service Fees", price = serviceFee)
+        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text("Total Payment", fontWeight = FontWeight.Bold, color = Color.Black)
+            Text(
+                "Rp${String.format("%,d", totalPrice)}",
+                fontWeight = FontWeight.Bold,
+                color = PrimaryBlue,
+                style = MaterialTheme.typography.titleMedium,
+            )
+        }
+    }
+}
+
+@Composable
+private fun PriceRow(label: String, price: Int) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label, fontWeight = if (isTotal) FontWeight.Bold else FontWeight.Normal, color = if (isTotal) Color.Black else Color.Gray)
-        Text(price, fontWeight = if (isTotal) FontWeight.Bold else FontWeight.SemiBold, color = if (isTotal) Color.Black else Color.DarkGray)
+        Text(label, color = Color.Gray)
+        Text("Rp${String.format("%,d", price)}", fontWeight = FontWeight.SemiBold, color = Color.Black)
     }
 }
 
-@Preview(showBackground = true)
+@Preview(showBackground = true, device = "spec:width=411dp,height=891dp")
 @Composable
 fun CheckoutScreenPreview() {
+    val navController = rememberNavController()
+    val fakeViewModel = CustomizationViewModel()
+
+    // Menambahkan data contoh ke ViewModel untuk preview
+    fakeViewModel.setCaseType("Premium anti crack")
+    fakeViewModel.setPrintEffect("Glow Effect")
+    fakeViewModel.setPhoneType("iPhone 15 Pro Max")
+    fakeViewModel.addTextLayer("Unicase", Color.White)
+
+    // Perbaikan untuk preview: Buat objek, tambahkan, lalu pilih
+    val fakeAddress = Address(
+        recipientName = "Budi Santoso",
+        phoneNumber = "081234567890",
+        fullAddress = "Jl. Kemerdekaan No. 17, Tebet",
+        label = "Rumah",
+        isSelected = true
+    )
+    fakeViewModel.addAddress(fakeAddress)
+    // Fungsi addAddress yang diperbarui akan otomatis memilih alamat ini
+    // fakeViewModel.selectAddress(fakeAddress.id) // Tidak perlu lagi jika addAddress sudah menangani
+
     UnicaseTheme {
-        CheckoutScreen(rememberNavController())
+        CheckoutScreen(
+            navController = navController,
+            customizationViewModel = fakeViewModel
+        )
     }
 }

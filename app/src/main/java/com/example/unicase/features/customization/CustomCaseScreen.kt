@@ -42,13 +42,12 @@ import com.example.unicase.R
 import com.example.unicase.ui.theme.Poppins
 import com.example.unicase.ui.theme.PrimaryBlue
 import com.example.unicase.ui.theme.UnicaseTheme
-import java.util.UUID
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CustomCaseScreen(
     navController: NavController,
-    customizationViewModel: CustomizationViewModel = viewModel()
+    customizationViewModel: CustomizationViewModel
 ) {
     val layers by customizationViewModel.layers
     val selectedLayerId by customizationViewModel.selectedLayerId
@@ -111,7 +110,7 @@ fun CustomCaseScreen(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .aspectRatio(3f / 3f)
+                    .aspectRatio(1f) // Ubah rasio agar lebih persegi jika perlu
                     .clip(RoundedCornerShape(16.dp))
                     .background(Color.LightGray),
                 contentAlignment = Alignment.Center
@@ -122,14 +121,16 @@ fun CustomCaseScreen(
                         .aspectRatio(10f / 19.5f)
                         .clipToBounds()
                         .clip(RoundedCornerShape(24.dp))
-                        .pointerInput(selectedLayerId) {
+                        .pointerInput(Unit) { // Ganti key jika perlu trigger ulang
                             detectTransformGestures { _, pan, zoom, rotationChange ->
-                                val selectedLayer = layers.find { it.id == selectedLayerId }
-                                selectedLayer?.let {
-                                    it.scale.value *= zoom
-                                    it.offsetX.value += pan.x
-                                    it.offsetY.value += pan.y
-                                    it.rotation.value += rotationChange
+                                selectedLayerId?.let { id ->
+                                    val selectedLayer = layers.find { it.id == id }
+                                    selectedLayer?.let {
+                                        it.scale.value *= zoom
+                                        it.offsetX.value += pan.x
+                                        it.offsetY.value += pan.y
+                                        it.rotation.value += rotationChange
+                                    }
                                 }
                             }
                         }
@@ -148,7 +149,8 @@ fun CustomCaseScreen(
                                 )
                                 .border(
                                     width = if (layer.id == selectedLayerId) 2.dp else 0.dp,
-                                    color = if (layer.id == selectedLayerId) PrimaryBlue else Color.Transparent
+                                    color = if (layer.id == selectedLayerId) PrimaryBlue else Color.Transparent,
+                                    shape = RoundedCornerShape(24.dp)
                                 )
                         ) {
                             when (layer) {
@@ -161,13 +163,14 @@ fun CustomCaseScreen(
                                     )
                                 }
                                 is TextLayer -> {
-                                    Text(
-                                        text = layer.text,
-                                        color = layer.color.value,
-                                        style = MaterialTheme.typography.headlineSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        modifier = Modifier.align(Alignment.Center)
-                                    )
+                                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                                        Text(
+                                            text = layer.text,
+                                            color = layer.color.value,
+                                            style = MaterialTheme.typography.headlineSmall,
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
                                 }
                             }
                         }
@@ -204,7 +207,7 @@ fun CustomCaseScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    itemsIndexed(layers) { index, layer ->
+                    items(layers) { layer ->
                         val isSelected = layer.id == selectedLayerId
                         val buttonText = when (layer) {
                             is ImageLayer -> "Image"
@@ -296,6 +299,9 @@ fun AddTextDialog(onDismiss: () -> Unit, onConfirm: (String, Color) -> Unit) {
 fun CustomizationOptionSection(
     customizationViewModel: CustomizationViewModel
 ) {
+    val selectedCaseType by customizationViewModel.caseType
+    val selectedPrintEffect by customizationViewModel.printEffect
+
     val brands = listOf("Samsung", "Apple", "Xiaomi", "Oppo", "Vivo")
     val phoneTypes = mapOf(
         "Samsung" to listOf("Samsung Z Flip5", "Galaxy S24 Ultra", "Galaxy A55"),
@@ -304,6 +310,7 @@ fun CustomizationOptionSection(
         "Oppo" to listOf("Oppo Find N3", "Reno 11 Pro"),
         "Vivo" to listOf("Vivo X100 Pro", "V30 Pro")
     )
+
 
     val selectedBrand by customizationViewModel.phoneBrand
     val selectedType by customizationViewModel.phoneType
@@ -323,14 +330,34 @@ fun CustomizationOptionSection(
             Text("Case Type", style = MaterialTheme.typography.titleMedium, fontFamily = Poppins, color = Color.Black, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(listOf("Hardcase", "Softcase", "Premium anti crack")) { text -> OutlinedButton(onClick = {}) { Text(text) } }
+                items(listOf("Hardcase", "Softcase", "Premium anti crack")) { type ->
+                    val isSelected = type == selectedCaseType
+                    OutlinedButton(
+                        onClick = { customizationViewModel.setCaseType(type) },
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = if (isSelected) PrimaryBlue else Color.Transparent
+                        )
+                    ) {
+                        Text(type, color = if (isSelected) Color.White else PrimaryBlue)
+                    }
+                }
             }
         }
         Column {
             Text("Print Effect", style = MaterialTheme.typography.titleMedium, fontFamily = Poppins, color = Color.Black, fontWeight = FontWeight.Bold)
             Spacer(modifier = Modifier.height(8.dp))
             LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                items(listOf("Glossy", "Doff", "Glow Effect")) { text -> OutlinedButton(onClick = {}) { Text(text) } }
+                items(listOf("Glossy", "Doff", "Glow Effect")) { effect ->
+                    val isSelected = effect == selectedPrintEffect
+                    OutlinedButton(
+                        onClick = { customizationViewModel.setPrintEffect(effect) },
+                        colors = ButtonDefaults.outlinedButtonColors(
+                            containerColor = if (isSelected) PrimaryBlue else Color.Transparent
+                        )
+                    ) {
+                        Text(effect, color = if (isSelected) Color.White else PrimaryBlue)
+                    }
+                }
             }
         }
 
@@ -401,14 +428,14 @@ fun CustomizationOptionSection(
         OutlinedTextField(
             value = additionalDescription,
             onValueChange = { additionalDescription = it },
-            label = { Text("Deskripsi tambahan") },
+            label = { Text("Additional description") },
             modifier = Modifier.fillMaxWidth().height(120.dp)
         )
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(Icons.Default.Info, contentDescription = "Info", modifier = Modifier.size(16.dp), tint = Color.Gray)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("Casing Galaxy Z Flip dikenakan biaya tambahan Rp 10.000 karena bahan khusus.", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
+            Text("Galaxy Z Flip cases are subject to an additional cost of Rp 10,000 due to the special material..", style = MaterialTheme.typography.bodySmall, color = Color.Gray)
         }
 
         Column(modifier = Modifier.padding(top = 16.dp)) {
@@ -425,8 +452,8 @@ fun PriceRow(label: String, price: String) {
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
-        Text(label, color = Color.Gray)
-        Text(price, fontWeight = FontWeight.SemiBold)
+        Text(label, color = Color.Black)
+        Text(price, fontWeight = FontWeight.SemiBold, color = Color.Black)
     }
 }
 

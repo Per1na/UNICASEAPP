@@ -11,7 +11,7 @@ import com.example.unicase.features.addaddress.AddAddressScreen
 import com.example.unicase.features.addresslist.AddressListScreen
 import com.example.unicase.features.auth.*
 import com.example.unicase.features.cart.ShoppingCartScreen
-import com.example.unicase.features.checkout.CheckoutScreen
+import com.example.unicase.features.customization.CheckoutScreen
 import com.example.unicase.features.customization.CustomCaseScreen
 import com.example.unicase.features.customization.CustomizationViewModel
 import com.example.unicase.features.main.MainScreen
@@ -121,29 +121,30 @@ fun AppNavigation() {
         composable("checkout") {
             CheckoutScreen(
                 navController = navController,
-                customizationViewModel = customizationViewModel,
-                addressListViewModel = addressListViewModel
+                customizationViewModel = customizationViewModel
             )
         }
         composable("address_list") {
             AddressListScreen(
-                addressListViewModel = addressListViewModel,
-                onBackClick = { navController.popBackStack() },
-                onAddAddressClick = { navController.navigate("add_address") },
-                onAddressSelected = { navController.popBackStack() } // kembali ke checkout
+                navController = navController,
+                customizationViewModel = customizationViewModel
             )
         }
-
         composable("add_address") {
             AddAddressScreen(
-                addressListViewModel = addressListViewModel,
-                onBackClick = { navController.popBackStack() },
-                onAddressSelected = { selectedAddress ->
-                }
+                navController = navController,
+                customizationViewModel = customizationViewModel
             )
         }
-        composable("payment") {
-            PaymentScreen(navController)
+        composable(
+            route = "payment/{totalAmount}",
+            arguments = listOf(navArgument("totalAmount") { type = NavType.IntType })
+        ) { backStackEntry ->
+            val totalAmount = backStackEntry.arguments?.getInt("totalAmount") ?: 0
+            PaymentScreen(
+                navController = navController,
+                totalAmount = totalAmount
+            )
         }
         composable("transactionHistory") {
             TransactionHistoryScreen(navController)

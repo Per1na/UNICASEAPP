@@ -37,7 +37,7 @@ fun SplashScreen(navController: NavController) { // NavController untuk pindah h
         Image(
             painter = painterResource(id = R.drawable.ic_unicase_logo),
             contentDescription = "Unicase Logo",
-            modifier = Modifier.fillMaxSize(0.80f) // Mengurangi ukuran logo
+            modifier = Modifier.fillMaxSize(0.60f) // Mengurangi ukuran logo
 
         )
     }
@@ -59,7 +59,7 @@ fun SplashScreenPreview() {
             Image(
                 painter = painterResource(id = R.drawable.ic_unicase_logo),
                 contentDescription = "Unicase Logo",
-                modifier = Modifier.fillMaxSize(0.80f) // Mengurangi ukuran logo
+                modifier = Modifier.fillMaxSize(0.60f) // Mengurangi ukuran logo
             )
         }
     }
